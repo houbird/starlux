@@ -1,0 +1,10 @@
+#version-display {
+  position: fixed;
+  bottom: 10px;
+  right: 10px;
+  font-size: 0.75rem; /* 12px */
+  color: #a0aec0; /* gray-500 */
+  background-color: #2d3748; /* gray-800 */
+  padding: 2px 5px;
+  border-radius: 3px;
+}

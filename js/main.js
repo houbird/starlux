@@ -13,6 +13,7 @@ const loaderContainer = document.getElementById('loaderContainer');
 const containerClass = document.getElementById('containerClass');
 const containerBankDiscount = document.getElementById('containerBankDiscount');
 const modalCORS = document.getElementById('modalCORS');
+const versionDisplay = document.getElementById('version-display');
 
 const options = airports.map(airport => {
   return {
@@ -453,4 +454,26 @@ document.addEventListener("DOMContentLoaded", function() {
   // renderFlightInfo(monthly); // for testing
 
   urlParamsHandler();
+  displayVersion(); // Call the new function here
 });
+
+async function displayVersion() {
+  if (!versionDisplay) return; // Do nothing if the element doesn't exist
+
+  try {
+    const response = await fetch('version.json');
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    const data = await response.json();
+    if (data && data.version) {
+      versionDisplay.textContent = `v${data.version}`;
+    } else {
+      versionDisplay.textContent = 'vN/A';
+      console.error('Version data is not in the expected format:', data);
+    }
+  } catch (error) {
+    console.error('Could not fetch version:', error);
+    versionDisplay.textContent = 'vError';
+  }
+}
