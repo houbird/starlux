@@ -138,6 +138,7 @@
       if (currentFocus >= items.length) currentFocus = 0;
       if (currentFocus < 0) currentFocus = items.length - 1;
       items[currentFocus].classList.add('bg-gray-700');
+      items[currentFocus].scrollIntoView({ block: 'nearest', inline: 'nearest' });
     }
 
     function removeActive(items) {
