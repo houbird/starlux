@@ -308,7 +308,13 @@ function renderFlightInfo(data) {
       const isWeekend = dayOfWeek === 0 || dayOfWeek === 6; // Check if it's Saturday or Sunday
       const month = String(date.getMonth() + 1).padStart(2, '0'); // 將月份格式化為兩位數
       const day = String(dayOfMonth).padStart(2, '0'); // 將月份格式化為兩位數
-      const day5 = String(dayOfMonth+5).padStart(2, '0'); // 將月份格式化為兩位數
+
+      // Calculate return date parts
+      const returnDateObj = new Date(date);
+      returnDateObj.setDate(returnDateObj.getDate() + 5);
+      const returnDay = String(returnDateObj.getDate()).padStart(2, '0');
+      const returnMonth = String(returnDateObj.getMonth() + 1).padStart(2, '0');
+      const returnYear = returnDateObj.getFullYear();
 
       (lowPrice) && div.classList.remove('border-gray-600');
       (lowPrice) && div.classList.add('fire', 'border-primary', 'border-2', 'border-l-8');
@@ -334,7 +340,7 @@ function renderFlightInfo(data) {
         </div>
         ${available ? `
         <div>
-          <a href="https://www.starlux-airlines.com/zh-TW/booking/everymundo?ondCityCode[0].origin=${departure}&ondCityCode[0].destination=${arrival}&ondCityCode[0].day=${day}&ondCityCode[0].month=${month}/${date.getFullYear()}&numAdults=1&numChildren=0&numInfant=0&cabinClassCode=Y&tripType=R&ondCityCode[1].month=${month}/${date.getFullYear()}&ondCityCode[1].day=${day5}" target="_blank" class="text-sm text-gray-400 underline">Book Now</a>
+          <a href="https://www.starlux-airlines.com/zh-TW/booking/everymundo?ondCityCode[0].origin=${departure}&ondCityCode[0].destination=${arrival}&ondCityCode[0].day=${day}&ondCityCode[0].month=${month}/${date.getFullYear()}&numAdults=1&numChildren=0&numInfant=0&cabinClassCode=Y&tripType=R&ondCityCode[1].month=${returnMonth}/${returnYear}&ondCityCode[1].day=${returnDay}" target="_blank" class="text-sm text-gray-400 underline">Book Now</a>
         </div>` : ''}
       `;
     } else {
@@ -374,7 +380,16 @@ function urlParamsHandler() {
   const arrival = urlParams.get('arrival');
   const departureDate = urlParams.get('departureDate');
   const cabin = urlParams.get('cabin');
-  const corporateCode = urlParams.get('corporateCode');
+  const corporateCodeParam = urlParams.get('corporateCode');
+  const bankDiscountParam = urlParams.get('bankDiscount');
+
+  // Determine the effective corporate code, prioritizing bankDiscount
+  let effectiveCorporateCode = null;
+  if (bankDiscountParam) {
+    effectiveCorporateCode = bankDiscountParam;
+  } else if (corporateCodeParam) {
+    effectiveCorporateCode = corporateCodeParam;
+  }
 
   if (departure && arrival && departureDate) {
     // 設定機場下拉選單
@@ -411,10 +426,10 @@ function urlParamsHandler() {
     }
 
     // 設定企業代碼折扣（如果有）
-    if (corporateCode) {
-      const discountButton = containerBankDiscount.querySelector(`button[data-value="${corporateCode}"]`);
+    if (effectiveCorporateCode) {
+      const discountButton = containerBankDiscount.querySelector(`button[data-value="${effectiveCorporateCode}"]`);
       if (discountButton) {
-        discountButton.click();
+        discountButton.click(); // This will set containerBankDiscount's data-selected-value
       }
     }
 
