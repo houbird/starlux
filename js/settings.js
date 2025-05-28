@@ -188,4 +188,27 @@ const airports = [
     "code":"SEA",
     "disabled": false
   }
-]
+];
+
+const regionStyles = {
+  "Taiwan": {
+    borderColorClass: "border-region-taiwan",
+    flag: "🇹🇼"
+  },
+  "Hong Kong / Macau Area": {
+    borderColorClass: "border-region-hkmo",
+    flag: "🇭🇰/🇲🇴"
+  },
+  "Northeast Asia": {
+    borderColorClass: "border-region-neasia",
+    flag: "🇯🇵/🇰🇷"
+  },
+  "Southeast Asia": {
+    borderColorClass: "border-region-seasia",
+    flag: "🇹🇭/🇻🇳/🇵🇭/🇲🇾/🇸🇬"
+  },
+  "North America": {
+    borderColorClass: "border-region-namerica",
+    flag: "🇺🇸/🇨🇦"
+  }
+};

@@ -16,37 +16,79 @@ const modalCORS = document.getElementById('modalCORS');
 const versionDisplay = document.getElementById('version-display');
 
 const options = airports.map(airport => {
+  const regionStyle = regionStyles[airport.region];
+  const flag = regionStyle?.flag || '🏳️'; // Default flag if region or style not found
   return {
     value: airport.code,
     label: airport.name,
-    sublabel: `${airport.location}, ${airport.region}`,
+    sublabel: `${flag} ${airport.location}, ${airport.region}`, // Updated sublabel
     badge: `${airport.code}`,
     disabled: airport.disabled
   };
 });
 
+function updateAirportSelectorStyle(selectorElement, airportCode) {
+  const button = selectorElement.querySelector('button');
+  if (!button) {
+    console.error('updateAirportSelectorStyle: Button element not found in selector:', selectorElement);
+    return;
+  }
+
+  const allBorderClassesToRemove = Object.values(regionStyles).map(s => s.borderColorClass).concat(['border-primary']);
+  button.classList.remove(...allBorderClassesToRemove);
+
+  if (!airportCode) {
+    // console.warn('updateAirportSelectorStyle: airportCode is undefined. Resetting to default border.');
+    button.classList.add('border-primary'); // Default border
+    return;
+  }
+
+  const airport = airports.find(a => a.code === airportCode);
+  if (!airport) {
+    console.error(`updateAirportSelectorStyle: Airport with code ${airportCode} not found.`);
+    button.classList.add('border-primary'); // Fallback to default
+    return;
+  }
+
+  const style = regionStyles[airport.region];
+  if (!style || !style.borderColorClass) {
+    console.error(`updateAirportSelectorStyle: Style or borderColorClass for region ${airport.region} not found.`);
+    button.classList.add('border-primary'); // Fallback to default
+    return;
+  }
+
+  button.classList.add(style.borderColorClass);
+}
+
 function appendAirport(){
+  const defaultFromCode = 'TPE';
+  const defaultToCode = 'KMJ';
+
   TailwindHeadless.appendDropdown(selectAirportFrom, {
     options: options,
     darkMode: true,
     multiple: false,
     enableSearch: true,
-    preselected: ['TPE'],
-    onChange: (value) => {
-      console.log('Selected value:', value);
+    preselected: [defaultFromCode],
+    onChange: (value) => { // value is the airport code (string)
+      console.log('Selected FROM value:', value);
+      updateAirportSelectorStyle(selectAirportFrom, value);
     }
   });
+  updateAirportSelectorStyle(selectAirportFrom, defaultFromCode); // Initial style
 
   TailwindHeadless.appendDropdown(selectAirportTo, {
     options: options,
     darkMode: true,
     multiple: false,
     enableSearch: true,
-    preselected: ['KMJ'],
-    onChange: (value) => {
-      console.log('Selected value:', value);
+    preselected: [defaultToCode],
+    onChange: (value) => { // value is the airport code (string)
+      console.log('Selected TO value:', value);
+      updateAirportSelectorStyle(selectAirportTo, value);
     }
   });
+  updateAirportSelectorStyle(selectAirportTo, defaultToCode); // Initial style
 }
 
 containerClass.querySelectorAll('button').forEach(button => {
@@ -81,28 +123,33 @@ btnReverse.addEventListener('click', () => {
   const toValue = selectAirportTo.getAttribute('data-selected-value');
 
   // 重新渲染下拉選單
-  selectAirportFrom.innerHTML = '';
-  selectAirportTo.innerHTML = '';
+  selectAirportFrom.innerHTML = ''; // Clear previous instance
   TailwindHeadless.appendDropdown(selectAirportFrom, {
     options: options,
     darkMode: true,
     multiple: false,
     enableSearch: true,
-    preselected: [toValue],
+    preselected: [toValue], // Swapped value
     onChange: (value) => {
-      console.log('Selected value:', value);
+      console.log('Selected FROM value (after reverse):', value);
+      updateAirportSelectorStyle(selectAirportFrom, value);
     }
   });
+  updateAirportSelectorStyle(selectAirportFrom, toValue); // Style for the new 'from'
+
+  selectAirportTo.innerHTML = ''; // Clear previous instance
   TailwindHeadless.appendDropdown(selectAirportTo, {
     options: options,
     darkMode: true,
     multiple: false,
     enableSearch: true,
-    preselected: [fromValue],
+    preselected: [fromValue], // Swapped value
     onChange: (value) => {
-      console.log('Selected value:', value);
+      console.log('Selected TO value (after reverse):', value);
+      updateAirportSelectorStyle(selectAirportTo, value);
     }
   });
+  updateAirportSelectorStyle(selectAirportTo, fromValue); // Style for the new 'to'
 });
 
 btnSearch.addEventListener('click', () => {
@@ -395,8 +442,7 @@ function urlParamsHandler() {
   if (departure && arrival && departureDate) {
     // 設定機場下拉選單
     // 重新渲染下拉選單
-    selectAirportFrom.innerHTML = '';
-    selectAirportTo.innerHTML = '';
+    selectAirportFrom.innerHTML = ''; // Clear previous instance
     TailwindHeadless.appendDropdown(selectAirportFrom, {
       options: options,
       darkMode: true,
@@ -404,9 +450,13 @@ function urlParamsHandler() {
       enableSearch: true,
       preselected: [departure],
       onChange: (value) => {
-        console.log('Selected value:', value);
+        console.log('Selected FROM value (URL params):', value);
+        updateAirportSelectorStyle(selectAirportFrom, value);
       }
     });
+    updateAirportSelectorStyle(selectAirportFrom, departure); // Style for 'from'
+
+    selectAirportTo.innerHTML = ''; // Clear previous instance
     TailwindHeadless.appendDropdown(selectAirportTo, {
       options: options,
       darkMode: true,
@@ -414,9 +464,11 @@ function urlParamsHandler() {
       enableSearch: true,
       preselected: [arrival],
       onChange: (value) => {
-        console.log('Selected value:', value);
+        console.log('Selected TO value (URL params):', value);
+        updateAirportSelectorStyle(selectAirportTo, value);
       }
     });
+    updateAirportSelectorStyle(selectAirportTo, arrival); // Style for 'to'
 
     // 設定艙等（如果有）
     if (cabin) {
