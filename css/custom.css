@@ -1,11 +1,3 @@
-:root {
-  --color-region-taiwan: #00A0A0;
-  --color-region-hkmo: #800080;
-  --color-region-neasia: #4682B4;
-  --color-region-seasia: #FFA500;
-  --color-region-namerica: #B22222;
-}
-
 #version-display {
   position: fixed;
   bottom: 10px;

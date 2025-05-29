@@ -1,39 +1,69 @@
-/** @type {import('tailwindcss').Config} */
-module.exports = {
-  content: [
-    "./*.html", // For HTML files in the root directory
-    "./js/**/*.js", // For JS files in the js directory and its subdirectories
-    // Add other paths if your HTML/JS files are located elsewhere
-  ],
-  theme: {
-    extend: {
-      colors: {
-        // It's common to define base colors here if they are not already CSS variables
-        // For example, if --primary and --secondary are from the original script's logic:
-        // primary: '#f9c78b',
-        // secondary: '#7e7267',
-        // Or, if they are defined in a CSS file like css/custom.css,
-        // you can reference them conceptually or decide to duplicate them here.
-        // For now, assuming they might be used as CSS vars:
-        primary: 'var(--primary)',
-        secondary: 'var(--secondary)',
-      },
-      borderColor: {
-        // Preserving primary and secondary as per instruction
-        primary: 'var(--primary)',
-        secondary: 'var(--secondary)',
-        // Adding new region-specific border colors
-        'region-taiwan': 'var(--color-region-taiwan)',
-        'region-hkmo': 'var(--color-region-hkmo)',
-        'region-neasia': 'var(--color-region-neasia)',
-        'region-seasia': 'var(--color-region-seasia)',
-        'region-namerica': 'var(--color-region-namerica)',
-      }
-    },
-  },
-  plugins: [
-    // You might eventually use a plugin to read from the original js/settings.js
-    // or the CSS variables in css/custom.css if you want a more dynamic config.
-    // For now, this is a static configuration per the task.
-  ],
+// 定義顏色變數和 class 名稱
+const colors = {
+  primary: '#f9c78b',
+  secondary: '#7e7267',
+  'region-taiwan': '#00A0A0',
+  'region-hkmo': '#800080',
+  'region-neasia': '#4682B4',
+  'region-seasia': '#FFA500',
+  'region-namerica': '#B22222'
 };
+
+const classNames = ['text', 'bg', 'border', 'fill', 'stroke', 'border-l', 'border-r', 'border-t', 'border-b'];
+
+function generateStyles(colors, classNames) {
+  let styles = ':root {\n';
+  for (const [key, value] of Object.entries(colors)) {
+    styles += `  --${key}: ${value};\n`;
+  }
+  styles += '}\n';
+
+  for (const [key, value] of Object.entries(colors)) {
+    classNames.forEach(className => {
+      styles += `.${className}-${key} {\n`;
+      switch (className) {
+        case 'text':
+          styles += `color: var(--${key});\n`;
+          break;
+        case 'bg':
+          styles += `background-color: var(--${key});\n`;
+          break;
+        case 'border':
+          styles += `border-color: var(--${key});\n`;
+          break;
+        case 'fill':
+          styles += `fill: var(--${key});\n`;
+          break;
+        case 'stroke':
+          styles += `stroke: var(--${key});\n`;
+          break;
+        case 'border-l':
+          styles += `border-left-color: var(--${key});\n`;
+          break;
+        case 'border-r':
+          styles += `border-right-color: var(--${key});\n`;
+          break;
+        case 'border-t':
+          styles += `border-top-color: var(--${key});\n`;
+          break;
+        case 'border-b':
+          styles += `border-bottom-color: var(--${key});\n`;
+          break;
+      }
+      styles += '}\n';
+    });
+  }
+
+  return styles;
+}
+
+function applyStyles(styles) {
+  const styleSheet = document.createElement("style");
+  styleSheet.type = "text/css";
+  styleSheet.innerText = styles;
+  document.head.appendChild(styleSheet);
+}
+
+// 生成並應用樣式
+const styles = generateStyles(colors, classNames);
+applyStyles(styles);
