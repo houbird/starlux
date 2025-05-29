@@ -51,6 +51,12 @@
         <div id="selectAirportTo" class="w-full"></div>
       </div>
       <div class="flex flex-col sm:flex-row items-center justify-between">
+        <label class="w-full text-sm font-medium text-gray-300 sm:w-auto"></label> <!-- Empty label for alignment -->
+        <div id="airportSuggestionsContainer" class="w-full flex flex-wrap gap-1 mt-1 sm:justify-end">
+            <!-- Suggestion buttons will be added here by JavaScript -->
+        </div>
+      </div>
+      <div class="flex flex-col sm:flex-row items-center justify-between">
         <label class="text-sm font-medium text-gray-300 whitespace-nowrap	">Class:</label>
         <div id="containerClass" class="w-full flex flex-col md:flex-row gap-2 justify-end" data-selected-value="eco">
           <button class="ml-2 px-2 py-1 rounded-full text-xs bg-primary text-gray-800" data-value="eco">Economy</button>

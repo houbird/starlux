@@ -67,7 +67,8 @@
     preselected = null,
     onChange = null,
     target,
-    enableSearch = false
+    enableSearch = false,
+    dropdownId = null // Add dropdownId to parameters
   }) {
     const container = document.createElement('div');
     container.className = 'relative inline-block w-full';
@@ -92,6 +93,9 @@
       ${darkMode ? 'bg-gray-800 text-white' : 'bg-white text-gray-800'}
     `;
     dropdown.style.display = 'none';
+    if (dropdownId) { // Use the passed in dropdownId
+      dropdown.id = dropdownId;
+    }
 
     const dropdownContainer = document.createElement('div');
     dropdownContainer.className = `flex flex-col gap-2 px-2`;
@@ -241,7 +245,8 @@
   }
 
   function appendDropdown(target, config) {
-    const dropdownConfig = { ...config, target };
+    // Pass dropdownId from config to createDropdown
+    const dropdownConfig = { ...config, target, dropdownId: config.dropdownId }; 
     const dropdown = createDropdown(dropdownConfig);
     if (typeof target === 'string') {
       document.querySelector(target).appendChild(dropdown.container);

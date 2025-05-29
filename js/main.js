@@ -14,6 +14,7 @@ const containerClass = document.getElementById('containerClass');
 const containerBankDiscount = document.getElementById('containerBankDiscount');
 const modalCORS = document.getElementById('modalCORS');
 const versionDisplay = document.getElementById('version-display');
+const airportSuggestionsContainer = document.getElementById('airportSuggestionsContainer'); // Added
 
 const options = airports.map(airport => {
   const regionStyle = regionStyles[airport.region];
@@ -70,6 +71,7 @@ function appendAirport(){
     multiple: false,
     enableSearch: true,
     preselected: [defaultFromCode],
+    dropdownId: 'airportFromDropdownList', // Add ID for the 'from' dropdown list
     onChange: (value) => { // value is the airport code (string)
       console.log('Selected FROM value:', value);
       updateAirportSelectorStyle(selectAirportFrom, value);
@@ -83,12 +85,36 @@ function appendAirport(){
     multiple: false,
     enableSearch: true,
     preselected: [defaultToCode],
+    dropdownId: 'airportToDropdownList', // Add ID for the 'to' dropdown list
     onChange: (value) => { // value is the airport code (string)
       console.log('Selected TO value:', value);
       updateAirportSelectorStyle(selectAirportTo, value);
     }
   });
   updateAirportSelectorStyle(selectAirportTo, defaultToCode); // Initial style
+
+  // Add event listeners to buttons to close the other dropdown
+  const fromButton = selectAirportFrom.querySelector('button');
+  const toButton = selectAirportTo.querySelector('button');
+
+  if (fromButton) {
+    fromButton.addEventListener('click', () => {
+      const toDropdown = document.getElementById('airportToDropdownList');
+      if (toDropdown) {
+        toDropdown.style.display = 'none';
+      }
+      displayAirportSuggestions(); // Call suggestions when 'from' button is clicked
+    });
+  }
+
+  if (toButton) {
+    toButton.addEventListener('click', () => {
+      const fromDropdown = document.getElementById('airportFromDropdownList');
+      if (fromDropdown) {
+        fromDropdown.style.display = 'none';
+      }
+    });
+  }
 }
 
 containerClass.querySelectorAll('button').forEach(button => {
@@ -130,6 +156,7 @@ btnReverse.addEventListener('click', () => {
     multiple: false,
     enableSearch: true,
     preselected: [toValue], // Swapped value
+    dropdownId: 'airportFromDropdownList', // Re-assign ID
     onChange: (value) => {
       console.log('Selected FROM value (after reverse):', value);
       updateAirportSelectorStyle(selectAirportFrom, value);
@@ -144,12 +171,36 @@ btnReverse.addEventListener('click', () => {
     multiple: false,
     enableSearch: true,
     preselected: [fromValue], // Swapped value
+    dropdownId: 'airportToDropdownList', // Re-assign ID
     onChange: (value) => {
       console.log('Selected TO value (after reverse):', value);
       updateAirportSelectorStyle(selectAirportTo, value);
     }
   });
   updateAirportSelectorStyle(selectAirportTo, fromValue); // Style for the new 'to'
+
+  // Re-attach event listeners after re-rendering
+  const fromButton = selectAirportFrom.querySelector('button');
+  const toButton = selectAirportTo.querySelector('button');
+
+  if (fromButton) {
+    fromButton.addEventListener('click', () => {
+      const toDropdown = document.getElementById('airportToDropdownList');
+      if (toDropdown) {
+        toDropdown.style.display = 'none';
+      }
+    });
+  }
+
+  if (toButton) {
+    toButton.addEventListener('click', () => {
+      const fromDropdown = document.getElementById('airportFromDropdownList');
+      if (fromDropdown) {
+        fromDropdown.style.display = 'none';
+      }
+    });
+  }
+  displayAirportSuggestions(); // Call suggestions after reversing
 });
 
 btnSearch.addEventListener('click', () => {
@@ -449,6 +500,7 @@ function urlParamsHandler() {
       multiple: false,
       enableSearch: true,
       preselected: [departure],
+      dropdownId: 'airportFromDropdownList', // Add ID
       onChange: (value) => {
         console.log('Selected FROM value (URL params):', value);
         updateAirportSelectorStyle(selectAirportFrom, value);
@@ -463,12 +515,35 @@ function urlParamsHandler() {
       multiple: false,
       enableSearch: true,
       preselected: [arrival],
+      dropdownId: 'airportToDropdownList', // Add ID
       onChange: (value) => {
         console.log('Selected TO value (URL params):', value);
         updateAirportSelectorStyle(selectAirportTo, value);
       }
     });
     updateAirportSelectorStyle(selectAirportTo, arrival); // Style for 'to'
+
+    // Re-attach event listeners after re-rendering due to URL params
+    const fromButton = selectAirportFrom.querySelector('button');
+    const toButton = selectAirportTo.querySelector('button');
+
+    if (fromButton) {
+      fromButton.addEventListener('click', () => {
+        const toDropdown = document.getElementById('airportToDropdownList');
+        if (toDropdown) {
+          toDropdown.style.display = 'none';
+        }
+      });
+    }
+
+    if (toButton) {
+      toButton.addEventListener('click', () => {
+        const fromDropdown = document.getElementById('airportFromDropdownList');
+        if (fromDropdown) {
+          fromDropdown.style.display = 'none';
+        }
+      });
+    }
 
     // 設定艙等（如果有）
     if (cabin) {
@@ -508,6 +583,53 @@ document.addEventListener("DOMContentLoaded", function() {
   urlParamsHandler();
   displayVersion(); // Call the new function here
 });
+
+function displayAirportSuggestions() {
+  if (!airportSuggestionsContainer) return;
+
+  const fromAirportCode = selectAirportFrom.getAttribute('data-selected-value');
+  const toAirportCode = selectAirportTo.getAttribute('data-selected-value');
+
+  const availableAirports = airports.filter(airport => {
+    return !airport.disabled &&
+           airport.code !== fromAirportCode &&
+           airport.code !== toAirportCode;
+  });
+
+  // Shuffle and select up to 5 airports
+  const shuffled = availableAirports.sort(() => 0.5 - Math.random());
+  const suggestions = shuffled.slice(0, 5);
+
+  airportSuggestionsContainer.innerHTML = ''; // Clear previous suggestions
+
+  suggestions.forEach(airport => {
+    const button = document.createElement('button');
+    button.textContent = `${airport.name} (${airport.code})`;
+    button.dataset.airportCode = airport.code;
+    button.className = 'px-2 py-1 text-xs bg-gray-700 text-white rounded hover:bg-gray-600 transition-colors';
+    
+    button.addEventListener('click', () => {
+      const selectedCode = button.dataset.airportCode;
+      const selectedAirportOption = options.find(opt => opt.value === selectedCode);
+
+      if (selectedAirportOption) {
+        selectAirportTo.setAttribute('data-selected-value', selectedCode);
+        
+        // Update the button content for selectAirportTo
+        const toButtonElement = selectAirportTo.querySelector('button');
+        if (toButtonElement) {
+          TailwindHeadless.updateButtonContent(toButtonElement, selectedAirportOption, true); // true for darkMode
+        }
+        
+        updateAirportSelectorStyle(selectAirportTo, selectedCode);
+        
+        // Clear suggestions after selection
+        airportSuggestionsContainer.innerHTML = ''; 
+      }
+    });
+    airportSuggestionsContainer.appendChild(button);
+  });
+}
 
 async function displayVersion() {
   if (!versionDisplay) return; // Do nothing if the element doesn't exist
