@@ -31,7 +31,7 @@ async function fetchHolidaysForMonth(year, month) {
     }
     const monthData = {};
     allHolidays.forEach(item => {
-      if (item.date.startsWith(`${year}${month}`) && item.holidaycategory !== '星期六、星期日') {
+      if (item.date && item.date.startsWith(`${year}${month}`) && item.holidaycategory !== '星期六、星期日') {
         const formatted = `${item.date.slice(0,4)}-${item.date.slice(4,6)}-${item.date.slice(6,8)}`;
         monthData[formatted] = item;
       }
