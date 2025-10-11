@@ -8,7 +8,7 @@
   function createBadge(badgeText, darkMode) {
     const badge = document.createElement('span');
     badge.className = `
-      ml-2 px-2 py-1 rounded-full text-xs
+      ml-2 px-2 py-1 rounded-full text-xs 
       ${darkMode ? 'bg-gray-600 text-white' : 'bg-gray-700 text-gray-800'}
     `;
     badge.textContent = badgeText;

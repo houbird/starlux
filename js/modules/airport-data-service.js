@@ -7,6 +7,7 @@ import { API_ENDPOINTS, COUNTRY_TO_REGION, REGION_STYLES } from '../settings.mod
 
 export class AirportDataService {
   constructor(apiUrl = API_ENDPOINTS.AIRPORT_ROUTES) {
+  constructor(apiUrl = API_ENDPOINTS.AIRPORT_ROUTES) {
     this.apiUrl = apiUrl;
     this.cachedData = null;
   }
@@ -61,6 +62,7 @@ export class AirportDataService {
    */
   getRegionFromCountry(country, apiRegion) {
     return COUNTRY_TO_REGION[country] || apiRegion;
+    return COUNTRY_TO_REGION[country] || apiRegion;
   }
 
   /**
@@ -83,6 +85,8 @@ export class AirportDataService {
    * @returns {Object} Region styles configuration
    */
   generateRegionStyles(airports) {
+    // Use centralized REGION_STYLES configuration
+    return REGION_STYLES;
     // Use centralized REGION_STYLES configuration
     return REGION_STYLES;
   }
