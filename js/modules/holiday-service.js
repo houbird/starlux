@@ -2,6 +2,8 @@
  * Holiday Service Module
  * Manages Taiwan holiday data fetching and caching
  */
+import { API_ENDPOINTS } from '../settings.module.js';
+
 export class HolidayService {
   constructor() {
     this.TAIWAN_CALENDAR_API = 'https://opensheet.elk.sh/1yC_pjiP0orcMqRy0rpymMjDpISJhiJBcMoOmCowru84/taiwan-calendar';

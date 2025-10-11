@@ -1,13 +1,28 @@
 // 定義顏色變數和 class 名稱
-const colors = {
-  primary: '#f9c78b',
-  secondary: '#7e7267',
-  'region-taiwan': '#00A0A0',
-  'region-hkmo': '#800080',
-  'region-neasia': '#4682B4',
-  'region-seasia': '#FFA500',
-  'region-namerica': '#B22222'
-};
+// Use centralized configuration from AppConfig if available
+const colors = (function() {
+  const baseColors = {
+    primary: '#f9c78b',
+    secondary: '#7e7267'
+  };
+  
+  // Merge with region colors from AppConfig if available
+  if (typeof window !== 'undefined' && window.AppConfig && window.AppConfig.REGION_COLORS) {
+    return { ...baseColors, ...window.AppConfig.REGION_COLORS };
+  }
+  
+  // Fallback to hardcoded values
+  return {
+    ...baseColors,
+    'region-taiwan': '#00A0A0',
+    'region-hkmo': '#800080',
+    'region-neasia': '#4682B4',
+    'region-seasia': '#FFA500',
+    'region-namerica': '#B22222',
+    'region-middle-east': '#DAA520',
+    'region-europe': '#228B22'
+  };
+})();
 
 const classNames = ['text', 'bg', 'border', 'fill', 'stroke', 'border-l', 'border-r', 'border-t', 'border-b'];
 

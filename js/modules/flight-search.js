@@ -2,6 +2,8 @@
  * Flight Search Module
  * Handles flight search API calls and data processing
  */
+import { API_ENDPOINTS, DEFAULT_TRAVELERS, DEFAULT_HEADERS, DEFAULT_SEARCH } from '../settings.module.js';
+
 export class FlightSearch {
   constructor() {
     this.apiUrl = 'https://cors-anywhere.herokuapp.com/https://ecapi.starlux-airlines.com/searchFlight/v2/flights/calendars/monthly';

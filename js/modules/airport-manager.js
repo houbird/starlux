@@ -2,6 +2,9 @@
  * Airport Manager Module
  * Handles airport dropdown creation, styling, and suggestions
  */
+import { DROPDOWN_CONFIG, DEFAULT_SEARCH } from '../settings.module.js';
+
+import { DROPDOWN_CONFIG, DEFAULT_SEARCH } from '../settings.module.js';
 export class AirportManager {
   constructor(airports, regionStyles) {
     this.airports = airports;
