@@ -4,12 +4,12 @@
  */
 import { DROPDOWN_CONFIG, DEFAULT_SEARCH } from '../settings.module.js';
 
-import { DROPDOWN_CONFIG, DEFAULT_SEARCH } from '../settings.module.js';
 export class AirportManager {
   constructor(airports, regionStyles) {
     this.airports = airports;
     this.regionStyles = regionStyles;
     this.options = this.createOptions();
+    this.dropdownConfig = DROPDOWN_CONFIG;
   }
 
   createOptions() {
@@ -61,9 +61,9 @@ export class AirportManager {
   appendAirportDropdown(element, config) {
     const defaultConfig = {
       options: this.options,
-      darkMode: true,
-      multiple: false,
-      enableSearch: true,
+      darkMode: this.dropdownConfig.DARK_MODE,
+      multiple: this.dropdownConfig.MULTIPLE,
+      enableSearch: this.dropdownConfig.ENABLE_SEARCH,
       ...config
     };
 
@@ -74,7 +74,7 @@ export class AirportManager {
     }
   }
 
-  generateAirportSuggestions(fromAirportCode, toAirportCode, maxSuggestions = 5) {
+  generateAirportSuggestions(fromAirportCode, toAirportCode, maxSuggestions = DEFAULT_SEARCH.MAX_SUGGESTIONS) {
     const availableAirports = this.airports.filter(airport => {
       return !airport.disabled &&
             airport.code !== fromAirportCode &&

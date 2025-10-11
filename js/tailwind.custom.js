@@ -1,3 +1,6 @@
+// Import centralized color configuration
+import { REGION_COLORS } from './settings.js';
+
 // 定義顏色變數和 class 名稱
 // Use centralized configuration from AppConfig if available
 const colors = (function() {

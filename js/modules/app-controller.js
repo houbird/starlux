@@ -41,7 +41,7 @@ export class AppController {
     const selectAirportTo = this.domElements.get('selectAirportTo');
 
     this.airportManager.appendAirportDropdown(selectAirportFrom, {
-      preselected: ['TPE'],
+      preselected: [DEFAULT_AIRPORTS.FROM],
       dropdownId: 'airportFromDropdownList',
       onChange: (value) => {
         console.log('Selected FROM value:', value);
@@ -50,7 +50,7 @@ export class AppController {
     });
 
     this.airportManager.appendAirportDropdown(selectAirportTo, {
-      preselected: ['KMJ'],
+      preselected: [DEFAULT_AIRPORTS.TO],
       dropdownId: 'airportToDropdownList',
       onChange: (value) => {
         console.log('Selected TO value:', value);
@@ -230,7 +230,7 @@ export class AppController {
       console.error('Flight search failed:', error);
       
       if (error.message === 'CORS_ERROR') {
-        console.error('請到 https://cors-anywhere.herokuapp.com/corsdemo 啟用 CORS');
+        console.error(`請到 ${EXTERNAL_URLS.CORS_DEMO} 啟用 CORS`);
         this.domElements.showModal('modalCORS');
       }
     } finally {
@@ -245,7 +245,11 @@ export class AppController {
     const fromAirportCode = this.domElements.get('selectAirportFrom').getAttribute('data-selected-value');
     const toAirportCode = this.domElements.get('selectAirportTo').getAttribute('data-selected-value');
 
-    const suggestions = this.airportManager.generateAirportSuggestions(fromAirportCode, toAirportCode);
+    const suggestions = this.airportManager.generateAirportSuggestions(
+      fromAirportCode, 
+      toAirportCode, 
+      DEFAULT_SEARCH.MAX_SUGGESTIONS
+    );
     
     airportSuggestionsContainer.innerHTML = '';
 

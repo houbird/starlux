@@ -6,12 +6,15 @@ import { API_ENDPOINTS, DEFAULT_TRAVELERS, DEFAULT_HEADERS, DEFAULT_SEARCH } fro
 
 export class FlightSearch {
   constructor() {
-    this.apiUrl = 'https://cors-anywhere.herokuapp.com/https://ecapi.starlux-airlines.com/searchFlight/v2/flights/calendars/monthly';
+    this.apiUrl = API_ENDPOINTS.FLIGHT_SEARCH;
+    this.defaultTravelers = DEFAULT_TRAVELERS;
+    this.defaultHeaders = DEFAULT_HEADERS;
+    this.returnDaysOffset = DEFAULT_SEARCH.RETURN_DAYS_OFFSET;
   }
 
   async searchFlight(departure, arrival, departureDate, cabin, corporateCode) {
     const returnDateObj = new Date(departureDate);
-    returnDateObj.setDate(returnDateObj.getDate() + 5);
+    returnDateObj.setDate(returnDateObj.getDate() + this.returnDaysOffset);
     const returnDate = returnDateObj.toISOString().split('T')[0];
 
     const data = {
@@ -29,9 +32,9 @@ export class FlightSearch {
         }
       ],
       travelers: {
-        adt: 1,
-        chd: 0,
-        inf: 0
+        adt: this.defaultTravelers.ADULTS,
+        chd: this.defaultTravelers.CHILDREN,
+        inf: this.defaultTravelers.INFANTS
       },
       goFareFamilyCode: null,
       corporateCode
@@ -43,10 +46,7 @@ export class FlightSearch {
     try {
       const response = await fetch(this.apiUrl, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'jx-lang': 'zh-TW',
-        },
+        headers: this.defaultHeaders,
         body: JSON.stringify(data)
       });
 

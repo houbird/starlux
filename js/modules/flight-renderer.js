@@ -7,6 +7,8 @@ import { DAY_NAMES, EXTERNAL_URLS } from '../settings.module.js';
 export class FlightRenderer {
   constructor(domElements) {
     this.domElements = domElements;
+    this.dayNames = DAY_NAMES;
+    this.bookingUrl = EXTERNAL_URLS.STARLUX_BOOKING;
   }
 
   renderFlightInfo(data, holidays = {}) {
@@ -68,7 +70,6 @@ export class FlightRenderer {
     const date = new Date(calendar.departureDate);
     const dayOfMonth = date.getDate();
     const dayOfWeek = date.getDay();
-    const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
     const lowPrice = calendar?.price?.amount <= minPrice;
     const available = calendar.status === 'available';
     const priceColor = lowPrice ? 'text-green-500 font-bold ' : calendar?.price?.amount >= maxPrice ? 'text-red-400' : 'text-gray-300';
@@ -101,7 +102,7 @@ export class FlightRenderer {
         </svg>
       </div>
       <div class="text-3xl text-gray-200 ${isWeekend ? 'opacity-50' : ''}">${dayOfMonth}</div>
-      <div class="block lg:hidden text-sm text-gray-400">(${dayNames[dayOfWeek]})</div>
+      <div class="block lg:hidden text-sm text-gray-400">(${this.dayNames[dayOfWeek]})</div>
       <div class="flex items-end">
         ${available ? 
           `<div class="text-lg leading-6 ${priceColor}">
@@ -114,7 +115,7 @@ export class FlightRenderer {
       </div>
       ${available ? `
       <div>
-        <a href="https://www.starlux-airlines.com/zh-TW/booking/everymundo?ondCityCode[0].origin=${departure}&ondCityCode[0].destination=${arrival}&ondCityCode[0].day=${day}&ondCityCode[0].month=${month}/${date.getFullYear()}&numAdults=1&numChildren=0&numInfant=0&cabinClassCode=Y&tripType=R&ondCityCode[1].month=${returnMonth}/${returnYear}&ondCityCode[1].day=${returnDay}" target="_blank" class="text-sm text-gray-400 underline">Book Now</a>
+        <a href="${this.bookingUrl}?ondCityCode[0].origin=${departure}&ondCityCode[0].destination=${arrival}&ondCityCode[0].day=${day}&ondCityCode[0].month=${month}/${date.getFullYear()}&numAdults=1&numChildren=0&numInfant=0&cabinClassCode=Y&tripType=R&ondCityCode[1].month=${returnMonth}/${returnYear}&ondCityCode[1].day=${returnDay}" target="_blank" class="text-sm text-gray-400 underline">Book Now</a>
       </div>` : ''}
     `;
   }
