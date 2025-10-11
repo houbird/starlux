@@ -7,7 +7,6 @@ import { API_ENDPOINTS, COUNTRY_TO_REGION, REGION_STYLES } from '../settings.mod
 
 export class AirportDataService {
   constructor(apiUrl = API_ENDPOINTS.AIRPORT_ROUTES) {
-  constructor(apiUrl = API_ENDPOINTS.AIRPORT_ROUTES) {
     this.apiUrl = apiUrl;
     this.cachedData = null;
   }
