@@ -2,6 +2,8 @@
  * Application Controller Module
  * Main application orchestrator that coordinates all modules
  */
+import { DEFAULT_AIRPORTS, DEFAULT_SEARCH, EXTERNAL_URLS } from '../settings.module.js';
+
 export class AppController {
   constructor(
     domElements,

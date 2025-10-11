@@ -2,6 +2,8 @@
  * Flight Renderer Module
  * Renders flight calendar and statistics
  */
+import { DAY_NAMES, EXTERNAL_URLS } from '../settings.module.js';
+
 export class FlightRenderer {
   constructor(domElements) {
     this.domElements = domElements;

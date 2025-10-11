@@ -14,8 +14,29 @@ This project is a simple web application that allows users to select a year and 
 The main code files include:
 
 - [index.html](./index.html): The main HTML file that contains the structure of the webpage.
-- [style.css](./css/style.css): Contains all the CSS styles used in the project.
-- [main.js](./js/main.js): Contains all the JavaScript code for the project.
+- [js/main.js](./js/main.js): Main application entry point that orchestrates all modules.
+
+### CSS Files
+- [css/global.css](./css/global.css): Global CSS styles.
+- [css/custom.css](./css/custom.css): Custom CSS styles for specific components.
+
+### JavaScript Modules
+- [js/modules/airport-data-service.js](./js/modules/airport-data-service.js): Fetches airport data from external API and transforms it to application format.
+- [js/modules/airport-manager.js](./js/modules/airport-manager.js): Manages airport dropdown creation, styling, and suggestions.
+- [js/modules/app-controller.js](./js/modules/app-controller.js): Main application controller coordinating all modules.
+- [js/modules/date-utils.js](./js/modules/date-utils.js): Date formatting and manipulation utilities.
+- [js/modules/dom-elements.js](./js/modules/dom-elements.js): DOM element reference management.
+- [js/modules/flight-renderer.js](./js/modules/flight-renderer.js): Renders flight information and statistics.
+- [js/modules/flight-search.js](./js/modules/flight-search.js): Handles flight search API calls.
+- [js/modules/holiday-service.js](./js/modules/holiday-service.js): Fetches holiday data for calendar display.
+- [js/modules/ui-state-manager.js](./js/modules/ui-state-manager.js): Manages UI state and interactions.
+- [js/modules/url-params-handler.js](./js/modules/url-params-handler.js): Handles URL parameter parsing and state restoration.
+- [js/modules/version-display.js](./js/modules/version-display.js): Displays application version information.
+
+### Tailwind Components
+- [js/tailwind.custom.js](./js/tailwind.custom.js): Custom Tailwind CSS color definitions for regions.
+- [js/tailwind.alert.js](./js/tailwind.alert.js): Alert component utilities.
+- [js/tailwind.select.js](./js/tailwind.select.js): Custom select dropdown component.
 
 ## Setup and Usage
 
