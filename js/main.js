@@ -6,16 +6,13 @@ import { DomElements } from './modules/dom-elements.js';
 import { DateUtils } from './modules/date-utils.js';
 import { HolidayService } from './modules/holiday-service.js';
 import { AirportManager } from './modules/airport-manager.js';
+import { AirportDataService } from './modules/airport-data-service.js';
 import { FlightSearch } from './modules/flight-search.js';
 import { UIStateManager } from './modules/ui-state-manager.js';
 import { FlightRenderer } from './modules/flight-renderer.js';
 import { UrlParamsHandler } from './modules/url-params-handler.js';
 import { VersionDisplay } from './modules/version-display.js';
 import { AppController } from './modules/app-controller.js';
-
-// Import settings data
-// Note: settings.js needs to be loaded before this module
-// or converted to export its data
 
 /**
  * Application class that initializes and coordinates all modules
@@ -31,6 +28,12 @@ class StarluxApp {
       // Initialize core modules
       this.modules.domElements = new DomElements();
       this.modules.holidayService = new HolidayService();
+      
+      // Fetch airport data from API
+      this.modules.airportDataService = new AirportDataService();
+      const { airports, regionStyles } = await this.modules.airportDataService.getAirportConfiguration();
+      
+      // Initialize airport manager with fetched data
       this.modules.airportManager = new AirportManager(airports, regionStyles);
       this.modules.flightSearch = new FlightSearch();
       this.modules.uiStateManager = new UIStateManager();

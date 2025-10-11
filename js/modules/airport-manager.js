@@ -14,12 +14,10 @@ export class AirportManager {
 
   createOptions() {
     return this.airports.map(airport => {
-      const regionStyle = this.regionStyles[airport.region];
-      const flag = regionStyle?.flag || '🏳️';
       return {
         value: airport.code,
         label: airport.name,
-        sublabel: `${flag} ${airport.location}, ${airport.region}`,
+        sublabel: `${airport.location}`,
         badge: `${airport.code}`,
         disabled: airport.disabled
       };
