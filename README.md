@@ -16,7 +16,6 @@ The project follows a modular architecture adhering to SOLID and DRY principles:
 ### Main Files
 - [index.html](./index.html): The main HTML file that contains the structure of the webpage.
 - [js/main.js](./js/main.js): Main application entry point that orchestrates all modules.
-- [js/settings.js](./js/settings.js): Legacy settings file (maintained for backward compatibility).
 
 ### CSS Files
 - [css/global.css](./css/global.css): Global CSS styles.
