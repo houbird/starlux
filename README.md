@@ -11,17 +11,19 @@ This project is a simple web application that allows users to select a year and 
 
 ## Project Structure
 
-The main code files include:
+The project follows a modular architecture adhering to SOLID and DRY principles:
 
+### Main Files
 - [index.html](./index.html): The main HTML file that contains the structure of the webpage.
 - [js/main.js](./js/main.js): Main application entry point that orchestrates all modules.
+- [js/settings.js](./js/settings.js): Legacy settings file (maintained for backward compatibility).
 
 ### CSS Files
 - [css/global.css](./css/global.css): Global CSS styles.
 - [css/custom.css](./css/custom.css): Custom CSS styles for specific components.
 
 ### JavaScript Modules
-- [js/modules/airport-data-service.js](./js/modules/airport-data-service.js): Fetches airport data from external API and transforms it to application format.
+- [js/modules/airport-data-service.js](./js/modules/airport-data-service.js): **NEW** - Fetches airport data from external API and transforms it to application format.
 - [js/modules/airport-manager.js](./js/modules/airport-manager.js): Manages airport dropdown creation, styling, and suggestions.
 - [js/modules/app-controller.js](./js/modules/app-controller.js): Main application controller coordinating all modules.
 - [js/modules/date-utils.js](./js/modules/date-utils.js): Date formatting and manipulation utilities.
@@ -63,10 +65,34 @@ The main code files include:
 
 - **Date Selection:** Users can select a specific year and month.
 - **Airport Selection:** Dropdown menus for selecting departure and destination airports.
+- **Dynamic Airport Data:** Airport information is loaded from external API (Google Sheets via OpenSheet).
 - **Price Search:** A button to search for flight prices for the selected month.
 - **Navigation:** Buttons to navigate between months.
 - **Price Display:** A calendar view displaying flight prices for each day of the selected month.
 - **Statistics Display:** A section to show statistical information about the prices for the selected month.
+- **Region-based Styling:** Airports are color-coded by region without emoji flags.
+
+## Architecture
+
+The application follows **SOLID** principles and **DRY** (Don't Repeat Yourself) methodology:
+
+- **Single Responsibility Principle (SRP)**: Each module has a single, well-defined responsibility.
+- **Open/Closed Principle**: Modules are open for extension but closed for modification.
+- **Liskov Substitution Principle**: Modules can be replaced with alternative implementations.
+- **Interface Segregation**: Each module exposes only necessary methods.
+- **Dependency Inversion**: Modules depend on abstractions, not concrete implementations.
+
+### Data Sources
+
+1. **Airport Data API**: `https://opensheet.elk.sh/1ezR0gCNjmVRRUBKtnP1LfMhGDPPyzLMbH8UsJEMBnrw/routes`
+   - Provides comprehensive airport information including IATA codes, timezones, and geographic data.
+   - Data is fetched on application initialization and cached for performance.
+
+2. **Flight Search API**: Starlux Airlines API via CORS proxy
+   - Provides real-time flight pricing and availability.
+
+3. **Holiday API**: Taiwan holiday calendar via Google Sheets
+   - Highlights holidays in the calendar view.
 
 ## Example
 
