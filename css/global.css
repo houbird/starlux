@@ -1,6 +1,8 @@
 * {
   font-family: 'Courier New', Courier, monospace;
   font-size: 14px;
+}
+body {
   color: #fff;
 }
 input[type="text"], textarea {
@@ -20,4 +22,28 @@ a {
   background: #f9c78b;
   width: 100%;
   opacity: 0.55;
+}
+
+/* Base theme colors - guarantee rendering across all elements */
+:root {
+  --primary: #f9c78b;
+  --secondary: #7e7267;
+}
+
+.bg-primary {
+  background-color: #f9c78b !important;
+  color: #1f2937 !important;
+}
+.bg-primary, .bg-primary * {
+  color: #1f2937 !important;
+}
+
+.text-primary {
+  color: #f9c78b !important;
+}
+.border-primary {
+  border-color: #f9c78b !important;
+}
+.bg-secondary {
+  background-color: #7e7267 !important;
 }

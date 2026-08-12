@@ -166,7 +166,10 @@ export class AppController {
 
     const inputSingleDate = this.domElements.get('inputSingleDate');
     if (inputSingleDate) {
-      inputSingleDate.value = '2024-10-10';
+      // Default to today + 1 month
+      const defaultDate = new Date();
+      defaultDate.setMonth(defaultDate.getMonth() + 1);
+      inputSingleDate.value = defaultDate.toISOString().split('T')[0];
     }
   }
 
@@ -179,8 +182,8 @@ export class AppController {
     const containerResult = this.domElements.get('containerResult');
     const containerCompareResult = this.domElements.get('containerCompareResult');
 
-    const activeClasses = ['bg-primary', 'text-gray-900', 'font-bold', 'shadow'];
-    const inactiveClasses = ['text-gray-400', 'hover:text-white', 'hover:bg-gray-800'];
+    const activeClasses = ['bg-primary', 'text-gray-800', 'shadow'];
+    const inactiveClasses = ['bg-gray-600', 'text-white', 'hover:bg-gray-500'];
 
     if (mode === 'month') {
       tabMonth?.classList.add(...activeClasses);
@@ -237,8 +240,19 @@ export class AppController {
     countryMap.forEach((countryAirports, country) => {
       const btn = document.createElement('button');
       btn.type = 'button';
-      btn.className = 'country-group-btn text-xs px-3 py-1 rounded-full border border-gray-700 bg-gray-900 text-gray-300 hover:bg-gray-700 transition-colors flex items-center gap-1';
-      btn.innerHTML = `<span>${country}</span> <span class="text-[10px] opacity-60">(${countryAirports.length})</span>`;
+
+      const isAllSelected = countryAirports.every(a => this.selectedCompareDestinations.has(a.code));
+      const isSomeSelected = countryAirports.some(a => this.selectedCompareDestinations.has(a.code));
+
+      if (isAllSelected) {
+        btn.className = 'country-group-btn text-xs px-2.5 py-1 rounded-full bg-primary text-gray-800 font-semibold cursor-pointer transition-all flex items-center gap-1 shadow-sm';
+      } else if (isSomeSelected) {
+        btn.className = 'country-group-btn text-xs px-2.5 py-1 rounded-full border border-primary/60 bg-gray-700 text-primary font-medium cursor-pointer transition-all flex items-center gap-1';
+      } else {
+        btn.className = 'country-group-btn text-xs px-2.5 py-1 rounded-full bg-gray-600 text-white hover:bg-gray-500 cursor-pointer transition-all flex items-center gap-1';
+      }
+
+      btn.innerHTML = `<span>${country}</span> <span class="text-[10px] opacity-75">(${countryAirports.length})</span>`;
 
       btn.addEventListener('click', () => {
         const allSelected = countryAirports.every(a => this.selectedCompareDestinations.has(a.code));
@@ -250,16 +264,6 @@ export class AppController {
         this.renderCompareCountryGroups();
         this.renderCompareAirportChips();
       });
-
-      // Highlight if all selected
-      const isAllSelected = countryAirports.every(a => this.selectedCompareDestinations.has(a.code));
-      const isSomeSelected = countryAirports.some(a => this.selectedCompareDestinations.has(a.code));
-
-      if (isAllSelected) {
-        btn.className = 'country-group-btn text-xs px-3 py-1 rounded-full border border-primary bg-primary text-gray-900 font-bold transition-colors flex items-center gap-1 shadow-sm';
-      } else if (isSomeSelected) {
-        btn.className = 'country-group-btn text-xs px-3 py-1 rounded-full border border-primary/60 bg-gray-800 text-primary transition-colors flex items-center gap-1';
-      }
 
       container.appendChild(btn);
     });
@@ -275,33 +279,26 @@ export class AppController {
     airports.forEach(airport => {
       const isSelected = this.selectedCompareDestinations.has(airport.code);
 
-      const label = document.createElement('label');
-      label.className = `flex items-center gap-2 p-2 rounded cursor-pointer border text-xs transition-all ${
-        isSelected
-          ? 'bg-gray-800 border-primary text-white font-medium shadow-sm ring-1 ring-primary/40'
-          : 'bg-gray-900/60 border-gray-700/80 text-gray-400 hover:border-gray-600 hover:text-gray-200'
-      }`;
+      const chip = document.createElement('button');
+      chip.type = 'button';
+      chip.className = isSelected
+        ? 'px-2.5 py-1 rounded-full text-xs font-semibold transition-all cursor-pointer bg-primary text-gray-800 whitespace-nowrap shadow-sm'
+        : 'px-2.5 py-1 rounded-full text-xs transition-all cursor-pointer bg-gray-600 text-white hover:bg-gray-500 whitespace-nowrap';
 
-      label.innerHTML = `
-        <input type="checkbox" value="${airport.code}" ${isSelected ? 'checked' : ''} class="accent-primary rounded cursor-pointer">
-        <div class="flex flex-col truncate">
-          <span class="truncate text-white font-medium">${airport.code} - ${airport.name}</span>
-          <span class="text-[10px] text-gray-400">${airport.country}</span>
-        </div>
-      `;
+      chip.textContent = `${airport.code} ${airport.name}`;
+      chip.title = `${airport.code} - ${airport.name} (${airport.country})`;
 
-      const checkbox = label.querySelector('input');
-      checkbox.addEventListener('change', (e) => {
-        if (e.target.checked) {
-          this.selectedCompareDestinations.add(airport.code);
-        } else {
+      chip.addEventListener('click', () => {
+        if (this.selectedCompareDestinations.has(airport.code)) {
           this.selectedCompareDestinations.delete(airport.code);
+        } else {
+          this.selectedCompareDestinations.add(airport.code);
         }
         this.renderCompareCountryGroups();
         this.renderCompareAirportChips();
       });
 
-      container.appendChild(label);
+      container.appendChild(chip);
     });
   }
 
@@ -348,16 +345,17 @@ export class AppController {
     // Concurrently fetch prices for each destination
     selectedDestinations.forEach(async (dest) => {
       try {
-        const flightDetailsPromise = this.flightNumberService
-          ? this.flightNumberService.getFlightDetailsHtml(departure, dest.code)
+        // Use compact flight numbers display, NOT full card HTML
+        const flightNumbersPromise = this.flightNumberService
+          ? this.flightNumberService.getFlightNumbersDisplay(departure, dest.code)
           : Promise.resolve('');
 
-        const [flightData, flightDetailsHtml] = await Promise.all([
+        const [flightData, flightNumbers] = await Promise.all([
           this.flightSearch.searchFlight(departure, dest.code, departureDate, cabin, corporateCode),
-          flightDetailsPromise
+          flightNumbersPromise
         ]);
 
-        this.singleDayCompareRenderer.updateItemResult(dest.code, flightData, flightDetailsHtml);
+        this.singleDayCompareRenderer.updateItemResult(dest.code, flightData, flightNumbers);
       } catch (error) {
         console.error(`Single day search failed for ${dest.code}:`, error);
         if (error.message === 'CORS_ERROR') {

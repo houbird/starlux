@@ -5,6 +5,18 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>STARLUX Flight Price Search</title>
 <script src="js/tailwind-3.4.0.min.js"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          primary: '#f9c78b',
+          secondary: '#7e7267'
+        }
+      }
+    }
+  };
+</script>
 <script src="js/tailwind.custom.js"></script>
 <link rel="stylesheet" href="css/global.css"/>
 <link rel="stylesheet" href="css/custom.css"/>
@@ -35,11 +47,11 @@
     <!-- Search Controls Container -->
     <div class="flex flex-col gap-3">
       <!-- Search Mode Selector Tabs -->
-      <div class="flex bg-gray-900/80 p-1 rounded-lg border border-gray-700">
-        <button id="tabSearchMonth" type="button" class="flex-1 py-2 px-4 text-xs sm:text-sm font-semibold rounded-md transition-all duration-200 bg-primary text-gray-900 shadow">
+      <div class="flex bg-gray-900/80 p-1 rounded-lg border border-gray-700 gap-1">
+        <button id="tabSearchMonth" type="button" class="flex-1 py-2 px-4 text-xs sm:text-sm font-semibold rounded-md transition-all duration-200 bg-primary shadow">
           📅 Monthly Calendar View
         </button>
-        <button id="tabCompareSingleDay" type="button" class="flex-1 py-2 px-4 text-xs sm:text-sm font-semibold rounded-md transition-all duration-200 text-gray-400 hover:text-white hover:bg-gray-800">
+        <button id="tabCompareSingleDay" type="button" class="flex-1 py-2 px-4 text-xs sm:text-sm font-semibold rounded-md transition-all duration-200 bg-gray-600 text-white hover:bg-gray-500">
           ⚡ Single-Day Price Comparison
         </button>
       </div>
@@ -97,20 +109,20 @@
               <button id="btnClearAllAirports" type="button" class="text-xs text-gray-400 hover:underline">Clear Selection</button>
             </div>
           </div>
-          <div id="containerCountryGroups" class="flex flex-wrap gap-1.5 py-1">
+          <div id="containerCountryGroups" class="flex flex-wrap gap-2 py-1">
             <!-- Country group buttons generated dynamically -->
           </div>
         </div>
 
         <div class="flex flex-col gap-1.5">
           <span class="text-xs sm:text-sm font-medium text-gray-300">Destination Airports:</span>
-          <div id="containerAirportChips" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 max-h-52 overflow-y-auto p-2 bg-gray-900/90 border border-gray-700 rounded-lg">
-            <!-- Airport checkboxes generated dynamically -->
+          <div id="containerAirportChips" class="flex flex-wrap gap-2 max-h-48 overflow-y-auto p-2 bg-gray-900/90 border border-gray-700 rounded-lg">
+            <!-- Airport pill badges generated dynamically -->
           </div>
         </div>
 
         <div class="flex justify-end mt-1">
-          <button id="btnCompareSearch" type="button" class="bg-primary text-gray-900 font-bold px-6 py-2.5 rounded shadow hover:bg-yellow-400 transition-colors flex items-center gap-2 text-sm">
+          <button id="btnCompareSearch" type="button" class="bg-primary text-gray-800 font-bold px-6 py-2.5 rounded shadow hover:opacity-90 transition-colors flex items-center gap-2 text-sm">
             ⚡ Compare Fares Across Destinations
           </button>
         </div>
@@ -159,26 +171,23 @@
     </div>
 
     <!-- Container for Single Day Multi-Destination Comparison Results -->
-    <div id="containerCompareResult" class="relative flex flex-col gap-3 hidden bg-gray-800 p-4 rounded-lg shadow-md mt-2">
-      <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between border-b border-gray-700 pb-3 gap-2">
-        <div>
-          <h3 class="text-lg sm:text-xl font-bold text-white flex items-center gap-2">
-            ⚡ Single-Day Price Comparison Results
-            <span id="spanCompareSummary" class="text-xs font-normal text-gray-300 bg-gray-700 px-2.5 py-0.5 rounded-full border border-gray-600"></span>
-          </h3>
-          <p class="text-xs text-gray-400 mt-0.5">Estimated round-trip fares starting on departure date (return +5 days)</p>
+    <div id="containerCompareResult" class="relative flex flex-col gap-2 hidden mt-2">
+      <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between pb-2 gap-2">
+        <div class="flex items-center gap-2">
+          <span class="text-sm font-bold text-white">⚡ Price Comparison</span>
+          <span id="spanCompareSummary" class="text-xs text-gray-400 bg-gray-700 px-2 py-0.5 rounded-full"></span>
         </div>
-        <div class="flex items-center gap-2 self-end sm:self-auto">
-          <label for="selectCompareSort" class="text-xs text-gray-300 whitespace-nowrap">Sort by:</label>
-          <select id="selectCompareSort" class="bg-gray-900 border border-gray-700 text-white text-xs rounded px-2 py-1.5 focus:outline-none focus:border-primary">
-            <option value="price-asc">Price: Low to High</option>
-            <option value="price-desc">Price: High to Low</option>
-            <option value="code">Airport Code: A → Z</option>
+        <div class="flex items-center gap-2">
+          <label for="selectCompareSort" class="text-xs text-gray-400">Sort:</label>
+          <select id="selectCompareSort" class="bg-gray-900 border border-gray-700 text-white text-xs rounded px-2 py-1 focus:outline-none">
+            <option value="price-asc">Price: Low → High</option>
+            <option value="price-desc">Price: High → Low</option>
+            <option value="code">Code: A → Z</option>
           </select>
         </div>
       </div>
 
-      <div id="containerCompareList" class="flex flex-col gap-3">
+      <div id="containerCompareList" class="flex flex-col gap-1.5">
         <!-- Rendered list items -->
       </div>
     </div>

@@ -37,41 +37,32 @@ export class SingleDayCompareRenderer {
         returnDateStr,
         status: 'loading',
         price: null,
-        flightDetailsHtml: ''
+        flightNumbers: ''
       });
 
       const row = document.createElement('div');
       row.id = `compare-item-${dest.code}`;
-      row.className = 'compare-item-card bg-gray-900 border border-gray-700 p-4 rounded-lg shadow-md flex flex-col md:flex-row md:items-center md:justify-between gap-4 transition-all duration-200';
+      row.className = 'relative bg-gray-900 border border-gray-700 rounded-lg p-3 flex items-center justify-between gap-3 transition-all duration-200';
       row.setAttribute('data-airport-code', dest.code);
-      row.setAttribute('data-price', '999999'); // Default high price for sorting
+      row.setAttribute('data-price', '999999');
 
+      // Table-like row layout with clear typography and non-shifting structure
       row.innerHTML = `
-        <div class="flex items-center gap-3">
-          <div class="bg-primary text-gray-900 font-bold px-3 py-1 rounded text-sm whitespace-nowrap">
-            ${departure} ✈️ ${dest.code}
+        <div class="flex items-center gap-3 min-w-0 flex-1">
+          <div class="shrink-0 bg-gray-800 border border-gray-600 font-bold px-2.5 py-1 rounded text-xs text-white whitespace-nowrap" style="min-width:90px;text-align:center;">
+            ${departure} → ${dest.code}
           </div>
-          <div>
-            <div class="text-white font-semibold text-base sm:text-lg leading-snug">${dest.name}</div>
-            <div class="text-xs text-gray-400">${dest.location}</div>
-          </div>
-        </div>
-
-        <div class="flex items-center gap-4 text-xs sm:text-sm text-gray-300">
-          <div class="bg-gray-800/80 px-3 py-1.5 rounded border border-gray-700">
-            🗓️ <span class="font-semibold text-white">${departureDate}</span>
-            <span class="text-xs text-gray-400"> (Return: ${returnDateStr}, 5 days)</span>
+          <div class="min-w-0 truncate">
+            <span class="text-sm font-semibold text-white truncate">${dest.name}</span>
+            <span class="text-xs text-gray-400 ml-1 truncate">(${dest.country})</span>
           </div>
         </div>
-
-        <div id="status-container-${dest.code}" class="status-container flex items-center gap-3 self-end md:self-auto">
-          <div class="flex items-center gap-2 text-primary font-medium text-sm">
-            <svg class="animate-spin h-5 w-5 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-            </svg>
-            <span>Searching fares...</span>
-          </div>
+        <div id="status-${dest.code}" class="status-container shrink-0 flex items-center gap-2 text-sm justify-end">
+          <svg class="animate-spin h-4 w-4 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          <span class="text-xs text-gray-400">Searching...</span>
         </div>
       `;
 
@@ -83,23 +74,21 @@ export class SingleDayCompareRenderer {
    * Update a specific destination item row when API returns data
    * @param {string} airportCode - Destination airport code
    * @param {Object} data - Flight data API response or error
-   * @param {string} flightDetailsHtml - Optional HTML for flight numbers
+   * @param {string} flightNumbers - Compact flight numbers string (e.g. "JX820, JX822")
    */
-  updateItemResult(airportCode, data, flightDetailsHtml = '') {
+  updateItemResult(airportCode, data, flightNumbers = '') {
     const row = document.getElementById(`compare-item-${airportCode}`);
     const itemInfo = this.itemsData.get(airportCode);
 
     if (!row || !itemInfo) return;
 
-    const statusContainer = document.getElementById(`status-container-${airportCode}`) || row.querySelector('.status-container') || row;
+    const statusContainer = document.getElementById(`status-${airportCode}`) || row.querySelector('.status-container') || row;
 
     if (data.error) {
       itemInfo.status = 'error';
       row.setAttribute('data-price', '999999');
       statusContainer.innerHTML = `
-        <div class="text-red-400 text-sm font-medium bg-red-950/40 border border-red-800 px-3 py-1.5 rounded">
-          ❌ Query Failed (${data.error})
-        </div>
+        <span class="text-xs text-red-400">❌ Query Failed</span>
       `;
       return;
     }
@@ -111,9 +100,7 @@ export class SingleDayCompareRenderer {
       itemInfo.status = 'unavailable';
       row.setAttribute('data-price', '999999');
       statusContainer.innerHTML = `
-        <div class="text-gray-500 italic text-sm bg-gray-800/50 px-3 py-1.5 rounded border border-gray-700">
-          Unavailable
-        </div>
+        <span class="text-xs text-gray-400 italic">Unavailable</span>
       `;
       return;
     }
@@ -122,7 +109,7 @@ export class SingleDayCompareRenderer {
     const currency = targetCalendar.price.currencyCode || 'TWD';
     itemInfo.status = 'success';
     itemInfo.price = price;
-    itemInfo.flightDetailsHtml = flightDetailsHtml;
+    itemInfo.flightNumbers = flightNumbers;
 
     row.setAttribute('data-price', price);
 
@@ -131,17 +118,20 @@ export class SingleDayCompareRenderer {
 
     const bookingHref = `${this.bookingUrl}?ondCityCode[0].origin=${itemInfo.departure}&ondCityCode[0].destination=${airportCode}&ondCityCode[0].day=${dDay}&ondCityCode[0].month=${dMonth}/${dYear}&numAdults=1&numChildren=0&numInfant=0&cabinClassCode=Y&tripType=R&ondCityCode[1].month=${rMonth}/${rYear}&ondCityCode[1].day=${rDay}`;
 
+    // Compact flight number badges
+    const flightBadges = flightNumbers && flightNumbers !== 'No direct flights'
+      ? flightNumbers.split(',').map(fn => `<span class="text-[10px] bg-gray-800 text-blue-300 border border-gray-700 px-1.5 py-0.5 rounded font-mono">${fn.trim()}</span>`).join(' ')
+      : '';
+
     statusContainer.innerHTML = `
-      <div class="flex items-center gap-3 sm:gap-4">
-        <div class="flex flex-col items-end">
-          <div class="text-xl sm:text-2xl font-bold text-green-400">
-            $${price.toLocaleString()} <span class="text-xs font-normal text-gray-400">${currency}</span>
-          </div>
-          ${flightDetailsHtml ? `<div class="text-xs text-blue-400 flex items-center gap-1 mt-0.5">${flightDetailsHtml}</div>` : ''}
+      <div class="flex items-center gap-3">
+        ${flightBadges ? `<div class="hidden sm:flex items-center gap-1">${flightBadges}</div>` : ''}
+        <div class="flex items-baseline gap-1">
+          <span class="text-lg sm:text-xl font-bold text-green-400 whitespace-nowrap">$${price.toLocaleString()}</span>
+          <span class="text-[10px] text-gray-400">${currency}</span>
         </div>
-        <a href="${bookingHref}" target="_blank" 
-           class="bg-primary text-gray-900 hover:bg-yellow-400 font-bold px-4 py-2 rounded text-xs sm:text-sm transition-colors whitespace-nowrap shadow">
-          Book Now
+        <a href="${bookingHref}" target="_blank" class="shrink-0 px-3 py-1 rounded text-xs font-bold transition-all bg-primary text-gray-800 hover:opacity-90 shadow whitespace-nowrap">
+          Book
         </a>
       </div>
     `;
@@ -171,22 +161,21 @@ export class SingleDayCompareRenderer {
       const row = document.getElementById(`compare-item-${code}`);
       if (!row) return;
 
-      const badgeContainer = row.querySelector('.flex.items-center.gap-3');
       const existingBadge = row.querySelector('.lowest-price-badge');
 
       if (info.status === 'success' && info.price === minPrice) {
-        row.classList.add('border-primary', 'ring-1', 'ring-primary', 'bg-gray-800');
-        row.classList.remove('border-gray-700', 'bg-gray-900');
+        row.classList.add('border-primary', 'shadow-md');
+        row.classList.remove('border-gray-700');
 
-        if (!existingBadge && badgeContainer) {
+        if (!existingBadge) {
           const badge = document.createElement('span');
-          badge.className = 'lowest-price-badge bg-red-600 text-white text-xs font-bold px-2 py-0.5 rounded-full animate-bounce whitespace-nowrap shadow';
+          badge.className = 'lowest-price-badge absolute -top-2.5 right-4 bg-red-600 text-white text-[10px] font-bold px-2.5 py-0.5 rounded-full shadow-md z-10 flex items-center gap-1';
           badge.textContent = '🔥 Lowest Fare';
-          badgeContainer.appendChild(badge);
+          row.appendChild(badge);
         }
       } else {
-        row.classList.remove('border-primary', 'ring-1', 'ring-primary', 'bg-gray-800');
-        row.classList.add('border-gray-700', 'bg-gray-900');
+        row.classList.remove('border-primary', 'shadow-md');
+        row.classList.add('border-gray-700');
         if (existingBadge) {
           existingBadge.remove();
         }
