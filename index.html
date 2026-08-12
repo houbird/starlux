@@ -10,54 +10,115 @@
 <link rel="stylesheet" href="css/custom.css"/>
 </head>
 <body class="bg-gray-900 min-h-screen flex flex-col items-center justify-center p-4">
-  <main class="w-full max-w-5xl bg-gray-800 p-6 rounded shadow-md flex flex-col gap-2">
+  <main class="w-full max-w-5xl bg-gray-800 p-6 rounded shadow-md flex flex-col gap-3">
     <h2 class="text-2xl font-bold text-center text-white">STARLUX Flight Price Search</h2>
     <div class="flex flex-col gap-2 border-l-4 border-l-primary">
-      <div class="bg-gray-800 px-6 py-2 rounded flex flex-col gap-2">
+      <div class="bg-gray-800 px-6 py-2 rounded flex flex-col gap-2 text-sm text-gray-300">
         <div>
           Before you start, please follow the steps below to get the CORS access.
         </div>
         <div class="flex flex-col md:flex-row gap-2 md:items-center">
-          <div class="bg-primary text-gray-800 font-bold flex items-center justify-center leading-4 rounded-full size-8">
+          <div class="bg-primary text-gray-800 font-bold flex items-center justify-center leading-4 rounded-full size-8 shrink-0">
             1
           </div>
           <div>Go to <a href="https://cors-anywhere.herokuapp.com/corsdemo" target="_blank" class="text-blue-500 underline">cors-anywhere</a> and click the <kbd class="px-2 py-1.5 text-xs font-semibold text-gray-800 bg-gray-100 border border-gray-200 rounded-lg dark:bg-gray-600 dark:text-gray-100 dark:border-gray-500 whitespace-nowrap">Request temporary access to the demo server</kbd>.</div>
         </div>
         <div class="flex flex-col md:flex-row gap-2 md:items-center">
-          <div class="bg-primary text-gray-800 font-bold flex items-center justify-center leading-4 rounded-full size-8">
+          <div class="bg-primary text-gray-800 font-bold flex items-center justify-center leading-4 rounded-full size-8 shrink-0">
             2
           </div>
-          <div>Select the month and the airports to search for the price.</div>
+          <div>Select search mode (Monthly View or Single-Day Comparison) to search fares.</div>
         </div>
       </div>
     </div>
-    <div class="flex flex-col gap-2">
-      <div class="flex flex-col sm:flex-row items-center justify-between">
-        <label for="inputMonth" class="w-full text-sm font-medium text-gray-300">Select yyyy-MM:</label>
-        <input type="month" id="inputMonth" class="w-full bg-gray-900 border border-gray-700 rounded p-2 mt-2 sm:mt-0 sm:ml-2" value="2024-10">
+
+    <!-- Search Controls Container -->
+    <div class="flex flex-col gap-3">
+      <!-- Search Mode Selector Tabs -->
+      <div class="flex bg-gray-900/80 p-1 rounded-lg border border-gray-700">
+        <button id="tabSearchMonth" type="button" class="flex-1 py-2 px-4 text-xs sm:text-sm font-semibold rounded-md transition-all duration-200 bg-primary text-gray-900 shadow">
+          📅 Monthly Calendar View
+        </button>
+        <button id="tabCompareSingleDay" type="button" class="flex-1 py-2 px-4 text-xs sm:text-sm font-semibold rounded-md transition-all duration-200 text-gray-400 hover:text-white hover:bg-gray-800">
+          ⚡ Single-Day Price Comparison
+        </button>
       </div>
+
+      <!-- Common Origin Airport -->
       <div class="flex flex-col sm:flex-row items-center justify-between">
         <label for="selectAirportFrom" class="w-full text-sm font-medium text-gray-300">Airport From 🛫:</label>
         <div id="selectAirportFrom" class="w-full"></div>
       </div>
-      <div class="flex flex-col sm:flex-row items-center justify-between">
-        <label class="w-full text-sm font-medium text-gray-300"></label>
-        <div class="w-full text-center">
-          <button id="btnReverse" class="text-white text-lg px-4 py-2 rounded mt-2">🔃</button>
+
+      <!-- Mode 1: Monthly Search Section -->
+      <div id="sectionMonthSearch" class="flex flex-col gap-3">
+        <div class="flex flex-col sm:flex-row items-center justify-between">
+          <label for="inputMonth" class="w-full text-sm font-medium text-gray-300">Select yyyy-MM:</label>
+          <input type="month" id="inputMonth" class="w-full bg-gray-900 border border-gray-700 rounded p-2 mt-2 sm:mt-0 sm:ml-2 text-white" value="2024-10">
+        </div>
+        <div class="flex flex-col sm:flex-row items-center justify-between">
+          <label class="w-full text-sm font-medium text-gray-300"></label>
+          <div class="w-full text-center">
+            <button id="btnReverse" class="text-white text-lg px-4 py-2 rounded mt-2 hover:bg-gray-700 transition-colors">🔃</button>
+          </div>
+        </div>
+        <div class="flex flex-col sm:flex-row items-center justify-between">
+          <label for="selectAirportTo" class="w-full text-sm font-medium text-gray-300 flex items-center gap-2">
+            Airport To 🛬:
+            <span id="flightCountBadge" class="hidden bg-blue-600 text-white text-xs font-bold px-2 py-1 rounded-full"></span>
+          </label>
+          <div id="selectAirportTo" class="w-full"></div>
+        </div>
+        <div class="flex flex-col sm:flex-row items-center justify-between">
+          <label class="w-full text-sm font-medium text-gray-300 sm:w-auto"></label>
+          <div id="airportSuggestionsContainer" class="w-full flex flex-wrap gap-1 mt-1 sm:justify-end">
+              <!-- Suggestion buttons -->
+          </div>
+        </div>
+        <div class="flex flex-col sm:flex-row items-center justify-between mt-1">
+          <label class="text-sm font-medium text-gray-300">Search the price for all months:</label>
+          <button id="btnSearch" class="bg-secondary text-white px-4 py-2 rounded mt-2 sm:mt-0 sm:ml-2 hover:bg-opacity-90 transition-colors">Search</button>
         </div>
       </div>
-      <div class="flex flex-col sm:flex-row items-center justify-between">
-        <label for="selectAirportTo" class="w-full text-sm font-medium text-gray-300">Airport To 🛬:</label>
-        <div id="selectAirportTo" class="w-full"></div>
-      </div>
-      <div class="flex flex-col sm:flex-row items-center justify-between">
-        <label class="w-full text-sm font-medium text-gray-300 sm:w-auto"></label> <!-- Empty label for alignment -->
-        <div id="airportSuggestionsContainer" class="w-full flex flex-wrap gap-1 mt-1 sm:justify-end">
-            <!-- Suggestion buttons will be added here by JavaScript -->
+
+      <!-- Mode 2: Single Day Multi-Destination Comparison Section -->
+      <div id="sectionCompareSearch" class="hidden flex flex-col gap-3 border-t border-gray-700/60 pt-3">
+        <div class="flex flex-col sm:flex-row items-center justify-between">
+          <label for="inputSingleDate" class="w-full text-sm font-medium text-gray-300">Departure Date 🗓️:</label>
+          <input type="date" id="inputSingleDate" class="w-full bg-gray-900 border border-gray-700 rounded p-2 mt-2 sm:mt-0 sm:ml-2 text-white">
+        </div>
+
+        <div class="flex flex-col gap-1.5">
+          <div class="flex items-center justify-between">
+            <span class="text-xs sm:text-sm font-medium text-gray-300">Country / Region Quick Select:</span>
+            <div class="flex gap-2">
+              <button id="btnSelectAllAirports" type="button" class="text-xs text-blue-400 hover:underline">Select All</button>
+              <span class="text-gray-600">|</span>
+              <button id="btnClearAllAirports" type="button" class="text-xs text-gray-400 hover:underline">Clear Selection</button>
+            </div>
+          </div>
+          <div id="containerCountryGroups" class="flex flex-wrap gap-1.5 py-1">
+            <!-- Country group buttons generated dynamically -->
+          </div>
+        </div>
+
+        <div class="flex flex-col gap-1.5">
+          <span class="text-xs sm:text-sm font-medium text-gray-300">Destination Airports:</span>
+          <div id="containerAirportChips" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 max-h-52 overflow-y-auto p-2 bg-gray-900/90 border border-gray-700 rounded-lg">
+            <!-- Airport checkboxes generated dynamically -->
+          </div>
+        </div>
+
+        <div class="flex justify-end mt-1">
+          <button id="btnCompareSearch" type="button" class="bg-primary text-gray-900 font-bold px-6 py-2.5 rounded shadow hover:bg-yellow-400 transition-colors flex items-center gap-2 text-sm">
+            ⚡ Compare Fares Across Destinations
+          </button>
         </div>
       </div>
-      <div class="flex flex-col sm:flex-row items-center justify-between">
-        <label class="text-sm font-medium text-gray-300 whitespace-nowrap	">Class:</label>
+
+      <!-- Class & Bank Discount & Promo Code (shared across modes) -->
+      <div class="flex flex-col sm:flex-row items-center justify-between mt-2 border-t border-gray-700/60 pt-3">
+        <label class="text-sm font-medium text-gray-300 whitespace-nowrap">Class:</label>
         <div id="containerClass" class="w-full flex flex-col md:flex-row gap-2 justify-end" data-selected-value="eco">
           <button class="ml-2 px-2 py-1 rounded-full text-xs bg-primary text-gray-800" data-value="eco">Economy</button>
           <button class="ml-2 px-2 py-1 rounded-full text-xs bg-gray-600 text-white" data-value="ecoPremium">Premium Economy</button>
@@ -66,7 +127,7 @@
         </div>
       </div>
       <div class="flex flex-col sm:flex-row items-center justify-between">
-        <label class="text-sm font-medium text-gray-300 whitespace-nowrap	">Bank Discount:</label>
+        <label class="text-sm font-medium text-gray-300 whitespace-nowrap">Bank Discount:</label>
         <div id="containerBankDiscount" class="w-full flex flex-col md:flex-row gap-2 justify-end" data-selected-value="COBRAND01">
           <button class="ml-2 px-2 py-1 rounded-full text-xs bg-gray-600 text-white" data-value="">None</button>
           <button class="ml-2 px-2 py-1 rounded-full text-xs bg-gray-600 text-white" data-value="COBRAND01">World Elite_10% off</button>
@@ -77,13 +138,11 @@
       </div>
       <div class="flex flex-col sm:flex-row items-center justify-between">
         <label for="inputPromoCode" class="w-full text-sm font-medium text-gray-300">Promo Code</label>
-        <input type="text" id="inputPromoCode" class="w-full bg-gray-900 border border-gray-700 rounded p-2 mt-2 sm:mt-0 sm:ml-2" placeholder="Promo Code ...">
-      </div>
-      <div class="flex flex-col sm:flex-row items-center justify-between">
-        <label class="text-sm font-medium text-gray-300">Search the price for all months:</label>
-        <button id="btnSearch" class="bg-secondary text-white px-4 py-2 rounded mt-2 sm:mt-0 sm:ml-2">Search</button>
+        <input type="text" id="inputPromoCode" class="w-full bg-gray-900 border border-gray-700 rounded p-2 mt-2 sm:mt-0 sm:ml-2 text-white" placeholder="Promo Code ...">
       </div>
     </div>
+
+    <!-- Container for Monthly View Results -->
     <div id="containerResult" class="relative flex flex-col gap-2 min-h-96 hidden">
       <div class="flex items-center justify-between">
         <button id="btnMonthPrev" class="bg-secondary text-white px-4 py-2 rounded">Prev</button>
@@ -98,7 +157,33 @@
         <div class="border-8 border-l-8 border-l-primary rounded-full w-16 h-16 animate-spin"></div>
       </div>
     </div>
+
+    <!-- Container for Single Day Multi-Destination Comparison Results -->
+    <div id="containerCompareResult" class="relative flex flex-col gap-3 hidden bg-gray-800 p-4 rounded-lg shadow-md mt-2">
+      <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between border-b border-gray-700 pb-3 gap-2">
+        <div>
+          <h3 class="text-lg sm:text-xl font-bold text-white flex items-center gap-2">
+            ⚡ Single-Day Price Comparison Results
+            <span id="spanCompareSummary" class="text-xs font-normal text-gray-300 bg-gray-700 px-2.5 py-0.5 rounded-full border border-gray-600"></span>
+          </h3>
+          <p class="text-xs text-gray-400 mt-0.5">Estimated round-trip fares starting on departure date (return +5 days)</p>
+        </div>
+        <div class="flex items-center gap-2 self-end sm:self-auto">
+          <label for="selectCompareSort" class="text-xs text-gray-300 whitespace-nowrap">Sort by:</label>
+          <select id="selectCompareSort" class="bg-gray-900 border border-gray-700 text-white text-xs rounded px-2 py-1.5 focus:outline-none focus:border-primary">
+            <option value="price-asc">Price: Low to High</option>
+            <option value="price-desc">Price: High to Low</option>
+            <option value="code">Airport Code: A → Z</option>
+          </select>
+        </div>
+      </div>
+
+      <div id="containerCompareList" class="flex flex-col gap-3">
+        <!-- Rendered list items -->
+      </div>
+    </div>
   </main>
+
   <footer class="text-center text-gray-400 mt-4 break-words">
     <div class="text-gray-400">
       Demo by <a href="https://cors-anywhere.herokuapp.com/corsdemo" target="_blank" class="text-blue-500 underline">corsdemo</a>
@@ -111,37 +196,37 @@
     </div>
     <div id="version-display"></div>
   </footer>
-</body>
 
-<!-- Modal for CORS notification --> 
-<div id="modalCORS" class="hidden fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center">
-  <div class="fixed inset-0 bg-gray-900 bg-opacity-80 z-0"></div>
-  <div class="flex flex-col gap-2 border-l-4 border-l-primary z-10">
-    <div class="bg-gray-800 p-6 rounded flex flex-col gap-2">
-      <div>
-        Before you start, please follow the steps below to get the CORS access.
-      </div>
-      <div class="flex flex-col md:flex-row gap-2 md:items-center">
-        <div class="bg-primary text-gray-800 font-bold flex items-center justify-center leading-4 rounded-full size-8">
-          1
+  <!-- Modal for CORS notification --> 
+  <div id="modalCORS" class="hidden fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center">
+    <div class="fixed inset-0 bg-gray-900 bg-opacity-80 z-0"></div>
+    <div class="flex flex-col gap-2 border-l-4 border-l-primary z-10">
+      <div class="bg-gray-800 p-6 rounded flex flex-col gap-2">
+        <div>
+          Before you start, please follow the steps below to get the CORS access.
         </div>
-        <div>Go to <a href="https://cors-anywhere.herokuapp.com/corsdemo" target="_blank" class="text-blue-500 underline">cors-anywhere</a> and click the <kbd class="px-2 py-1.5 text-xs font-semibold text-gray-800 bg-gray-100 border border-gray-200 rounded-lg dark:bg-gray-600 dark:text-gray-100 dark:border-gray-500 whitespace-nowrap">Request temporary access to the demo server</kbd>.</div>
-      </div>
-      <div class="flex flex-col md:flex-row gap-2 md:items-center">
-        <div class="bg-primary text-gray-800 font-bold flex items-center justify-center leading-4 rounded-full size-8">
-          2
+        <div class="flex flex-col md:flex-row gap-2 md:items-center">
+          <div class="bg-primary text-gray-800 font-bold flex items-center justify-center leading-4 rounded-full size-8">
+            1
+          </div>
+          <div>Go to <a href="https://cors-anywhere.herokuapp.com/corsdemo" target="_blank" class="text-blue-500 underline">cors-anywhere</a> and click the <kbd class="px-2 py-1.5 text-xs font-semibold text-gray-800 bg-gray-100 border border-gray-200 rounded-lg dark:bg-gray-600 dark:text-gray-100 dark:border-gray-500 whitespace-nowrap">Request temporary access to the demo server</kbd>.</div>
         </div>
-        <div>Select the month and the airports to search for the price.</div>
+        <div class="flex flex-col md:flex-row gap-2 md:items-center">
+          <div class="bg-primary text-gray-800 font-bold flex items-center justify-center leading-4 rounded-full size-8">
+            2
+          </div>
+          <div>Select search mode to search for the price.</div>
+        </div>
       </div>
     </div>
   </div>
-</div>
 
-<!-- Load dependencies -->
-<script src="js/tailwind.alert.js"></script>
-<script src="js/tailwind.select.js"></script>
-<script src="js/data.test.js"></script>
+  <!-- Load dependencies -->
+  <script src="js/tailwind.alert.js"></script>
+  <script src="js/tailwind.select.js"></script>
+  <script src="js/data.test.js"></script>
 
-<!-- Load modular application -->
-<script type="module" src="js/main.js"></script>
+  <!-- Load modular application -->
+  <script type="module" src="js/main.js"></script>
+</body>
 </html>

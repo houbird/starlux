@@ -27,6 +27,7 @@ The project follows a modular architecture adhering to SOLID and DRY principles:
 - [js/modules/app-controller.js](./js/modules/app-controller.js): Main application controller coordinating all modules.
 - [js/modules/date-utils.js](./js/modules/date-utils.js): Date formatting and manipulation utilities.
 - [js/modules/dom-elements.js](./js/modules/dom-elements.js): DOM element reference management.
+- [js/modules/flight-number-service.js](./js/modules/flight-number-service.js): **NEW** - Fetches and manages flight number data for route matching.
 - [js/modules/flight-renderer.js](./js/modules/flight-renderer.js): Renders flight information and statistics.
 - [js/modules/flight-search.js](./js/modules/flight-search.js): Handles flight search API calls.
 - [js/modules/holiday-service.js](./js/modules/holiday-service.js): Fetches holiday data for calendar display.
@@ -65,10 +66,11 @@ The project follows a modular architecture adhering to SOLID and DRY principles:
 - **Date Selection:** Users can select a specific year and month.
 - **Airport Selection:** Dropdown menus for selecting departure and destination airports.
 - **Dynamic Airport Data:** Airport information is loaded from external API (Google Sheets via OpenSheet).
+- **Flight Numbers Display:** **NEW** - Shows possible flight numbers for selected routes after fare calculation.
 - **Price Search:** A button to search for flight prices for the selected month.
 - **Navigation:** Buttons to navigate between months.
 - **Price Display:** A calendar view displaying flight prices for each day of the selected month.
-- **Statistics Display:** A section to show statistical information about the prices for the selected month.
+- **Statistics Display:** A section to show statistical information about the prices for the selected month, including available flight numbers.
 - **Region-based Styling:** Airports are color-coded by region without emoji flags.
 
 ## Architecture
@@ -87,10 +89,15 @@ The application follows **SOLID** principles and **DRY** (Don't Repeat Yourself)
    - Provides comprehensive airport information including IATA codes, timezones, and geographic data.
    - Data is fetched on application initialization and cached for performance.
 
-2. **Flight Search API**: Starlux Airlines API via CORS proxy
+2. **Flight Numbers API**: `https://opensheet.elk.sh/1ezR0gCNjmVRRUBKtnP1LfMhGDPPyzLMbH8UsJEMBnrw/flightno` **NEW**
+   - Provides flight number information for all Starlux routes.
+   - Matches flights by departure and arrival airport codes.
+   - Data is cached to minimize API calls.
+
+3. **Flight Search API**: Starlux Airlines API via CORS proxy
    - Provides real-time flight pricing and availability.
 
-3. **Holiday API**: Taiwan holiday calendar via Google Sheets
+4. **Holiday API**: Taiwan holiday calendar via Google Sheets
    - Highlights holidays in the calendar view.
 
 ## Example

@@ -1,0 +1,8 @@
+{
+  "name": "starlux-flight-search",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "test": "node js/single-day-compare.test.js"
+  }
+}

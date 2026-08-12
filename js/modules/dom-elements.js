@@ -26,7 +26,22 @@ export class DomElements {
       'containerBankDiscount',
       'modalCORS',
       'version-display',
-      'airportSuggestionsContainer'
+      'airportSuggestionsContainer',
+      'flightCountBadge',
+      'tabSearchMonth',
+      'tabCompareSingleDay',
+      'sectionMonthSearch',
+      'sectionCompareSearch',
+      'inputSingleDate',
+      'containerCountryGroups',
+      'containerAirportChips',
+      'btnSelectAllAirports',
+      'btnClearAllAirports',
+      'btnCompareSearch',
+      'containerCompareResult',
+      'containerCompareList',
+      'spanCompareSummary',
+      'selectCompareSort'
     ];
 
     elementIds.forEach(id => {
@@ -52,5 +67,17 @@ export class DomElements {
 
   hideModal(modalId) {
     this.elements[modalId]?.classList.add('hidden');
+  }
+
+  updateFlightCountBadge(count) {
+    const badge = this.elements.flightCountBadge;
+    if (!badge) return;
+    
+    if (count > 0) {
+      badge.textContent = `${count} flight${count > 1 ? 's' : ''}`;
+      badge.classList.remove('hidden');
+    } else {
+      badge.classList.add('hidden');
+    }
   }
 }
