@@ -2,7 +2,7 @@
  * Flight Search Module
  * Handles flight search API calls and data processing
  */
-import { API_ENDPOINTS, DEFAULT_TRAVELERS, DEFAULT_HEADERS, DEFAULT_SEARCH } from '../settings.module.js';
+import { API_ENDPOINTS, DEFAULT_TRAVELERS, DEFAULT_HEADERS, DEFAULT_SEARCH } from '../settings.module.js?v=1.2.1';
 
 export class FlightSearch {
   constructor() {
@@ -51,6 +51,16 @@ export class FlightSearch {
       });
 
       if (!response.ok) {
+        const errorText = await response.text().catch(() => '');
+        console.warn(`Flight search API responded with status ${response.status}:`, errorText);
+        if (
+          response.status === 403 ||
+          errorText.includes('corsdemo') ||
+          errorText.includes('/cors') ||
+          errorText.includes('cors-anywhere')
+        ) {
+          throw new Error('CORS_ERROR');
+        }
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
@@ -60,7 +70,15 @@ export class FlightSearch {
     } catch (error) {
       console.error('Flight search failed:', error);
       
-      if (error.message.includes('See /cors')) {
+      if (
+        error.message === 'CORS_ERROR' ||
+        error.message.includes('403') ||
+        error.message.includes('Forbidden') ||
+        error.message.includes('See /cors') ||
+        error.message.includes('corsdemo') ||
+        error.message.includes('Failed to fetch') ||
+        error.name === 'TypeError'
+      ) {
         throw new Error('CORS_ERROR');
       }
       

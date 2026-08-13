@@ -163,6 +163,23 @@ function runTests() {
   assert(containerList.children[1].id === 'compare-item-KIX', 'Second sorted item should be KIX (11000)');
   console.log('✓ Price descending sort test PASSED');
 
+  // Test 5: Handle CORS error result
+  renderer.updateItemResult('NRT', { error: 'CORS_ERROR' });
+  const nrtCorsInfo = renderer.itemsData.get('NRT');
+  assert(nrtCorsInfo.status === 'error', 'Status for NRT should be error after CORS error');
+  const nrtRow = document.getElementById('compare-item-NRT');
+  assert(nrtRow.innerHTML.includes('CORS Required'), 'Row HTML should contain CORS Required button');
+  assert(nrtRow.innerHTML.includes('btn-cors-trigger'), 'Row HTML should have btn-cors-trigger class');
+  console.log('✓ CORS error rendering test PASSED');
+
+  // Test 6: Handle generic error result
+  renderer.updateItemResult('KIX', { error: 'Network timeout' });
+  const kixErrorInfo = renderer.itemsData.get('KIX');
+  assert(kixErrorInfo.status === 'error', 'Status for KIX should be error');
+  const kixRow = document.getElementById('compare-item-KIX');
+  assert(kixRow.innerHTML.includes('Query Failed'), 'Row HTML should contain Query Failed for generic errors');
+  console.log('✓ Generic error rendering test PASSED');
+
   console.log('=== All Single Day Compare Tests PASSED ===');
 }
 

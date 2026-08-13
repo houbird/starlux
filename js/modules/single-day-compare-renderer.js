@@ -87,9 +87,19 @@ export class SingleDayCompareRenderer {
     if (data.error) {
       itemInfo.status = 'error';
       row.setAttribute('data-price', '999999');
-      statusContainer.innerHTML = `
-        <span class="text-xs text-red-400">❌ Query Failed</span>
-      `;
+      const isCorsError = data.error === 'CORS_ERROR' || (typeof data.error === 'string' && data.error.includes('CORS'));
+      if (isCorsError) {
+        statusContainer.innerHTML = `
+          <button type="button" class="btn-cors-trigger text-xs text-amber-400 hover:text-amber-300 flex items-center gap-1 font-medium bg-amber-950/40 hover:bg-amber-950/70 border border-amber-800/60 px-2 py-1 rounded cursor-pointer transition-colors" title="Click to view CORS activation instructions">
+            <span>⚠️</span>
+            <span>CORS Required</span>
+          </button>
+        `;
+      } else {
+        statusContainer.innerHTML = `
+          <span class="text-xs text-red-400">❌ Query Failed</span>
+        `;
+      }
       return;
     }
 

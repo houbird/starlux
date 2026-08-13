@@ -2,8 +2,8 @@
  * Application Controller Module
  * Main application orchestrator that coordinates all modules
  */
-import { DEFAULT_AIRPORTS, DEFAULT_SEARCH, EXTERNAL_URLS } from '../settings.module.js';
-import { SingleDayCompareRenderer } from './single-day-compare-renderer.js';
+import { DEFAULT_AIRPORTS, DEFAULT_SEARCH, EXTERNAL_URLS } from '../settings.module.js?v=1.2.1';
+import { SingleDayCompareRenderer } from './single-day-compare-renderer.js?v=1.2.1';
 
 export class AppController {
   constructor(
@@ -152,9 +152,30 @@ export class AppController {
       this.updateInputMonthValue(1);
     });
 
-    // Modal close
-    this.domElements.get('modalCORS')?.addEventListener('click', () => {
-      this.domElements.hideModal('modalCORS');
+    // Modal controls
+    const modalCORS = this.domElements.get('modalCORS');
+    const modalCORSBackdrop = this.domElements.get('modalCORSBackdrop');
+    const btnModalCORSClose = this.domElements.get('btnModalCORSClose');
+    const btnModalCORSOk = this.domElements.get('btnModalCORSOk');
+
+    const closeModal = () => this.domElements.hideModal('modalCORS');
+
+    modalCORSBackdrop?.addEventListener('click', closeModal);
+    btnModalCORSClose?.addEventListener('click', closeModal);
+    btnModalCORSOk?.addEventListener('click', closeModal);
+
+    // Close modal on Escape key
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && modalCORS && !modalCORS.classList.contains('hidden')) {
+        closeModal();
+      }
+    });
+
+    // Delegate clicks on CORS retry / help badges inside the comparison list
+    this.domElements.get('containerCompareList')?.addEventListener('click', (e) => {
+      if (e.target.closest('.btn-cors-trigger')) {
+        this.domElements.showModal('modalCORS');
+      }
     });
   }
 
@@ -342,6 +363,8 @@ export class AppController {
     // Render initial list with loading spinners
     this.singleDayCompareRenderer.renderInitialList(departure, selectedDestinations, departureDate);
 
+    let corsModalShown = false;
+
     // Concurrently fetch prices for each destination
     selectedDestinations.forEach(async (dest) => {
       try {
@@ -358,10 +381,23 @@ export class AppController {
         this.singleDayCompareRenderer.updateItemResult(dest.code, flightData, flightNumbers);
       } catch (error) {
         console.error(`Single day search failed for ${dest.code}:`, error);
-        if (error.message === 'CORS_ERROR') {
-          this.domElements.showModal('modalCORS');
+        const isCors = error.message === 'CORS_ERROR' ||
+          error.message.includes('403') ||
+          error.message.includes('CORS') ||
+          error.message.includes('Forbidden') ||
+          error.message.includes('corsdemo') ||
+          error.message.includes('Failed to fetch') ||
+          error.name === 'TypeError';
+
+        if (isCors) {
+          if (!corsModalShown) {
+            corsModalShown = true;
+            this.domElements.showModal('modalCORS');
+          }
+          this.singleDayCompareRenderer.updateItemResult(dest.code, { error: 'CORS_ERROR' });
+        } else {
+          this.singleDayCompareRenderer.updateItemResult(dest.code, { error: error.message || 'Network Error' });
         }
-        this.singleDayCompareRenderer.updateItemResult(dest.code, { error: error.message || 'CORS or Network Error' });
       }
     });
 
@@ -489,7 +525,15 @@ export class AppController {
     } catch (error) {
       console.error('Flight search failed:', error);
       
-      if (error.message === 'CORS_ERROR') {
+      const isCors = error.message === 'CORS_ERROR' ||
+        error.message.includes('403') ||
+        error.message.includes('CORS') ||
+        error.message.includes('Forbidden') ||
+        error.message.includes('corsdemo') ||
+        error.message.includes('Failed to fetch') ||
+        error.name === 'TypeError';
+
+      if (isCors) {
         console.error(`請到 ${EXTERNAL_URLS.CORS_DEMO} 啟用 CORS`);
         this.domElements.showModal('modalCORS');
       }
