@@ -66,11 +66,19 @@ export class DomElements {
   }
 
   showModal(modalId) {
-    this.elements[modalId]?.classList.remove('hidden');
+    const el = this.elements[modalId] || (typeof document !== 'undefined' ? document.getElementById(modalId) : null);
+    if (el) {
+      el.classList.remove('hidden');
+      el.style.display = 'flex';
+    }
   }
 
   hideModal(modalId) {
-    this.elements[modalId]?.classList.add('hidden');
+    const el = this.elements[modalId] || (typeof document !== 'undefined' ? document.getElementById(modalId) : null);
+    if (el) {
+      el.classList.add('hidden');
+      el.style.display = 'none';
+    }
   }
 
   updateFlightCountBadge(count) {
