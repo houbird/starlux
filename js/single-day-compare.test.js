@@ -2,6 +2,7 @@
  * Tests for Single Day Multi-Destination Comparison Feature
  */
 import { SingleDayCompareRenderer } from './modules/single-day-compare-renderer.js';
+import { DateUtils } from './modules/date-utils.js';
 
 function assert(condition, message) {
   if (!condition) {
@@ -179,6 +180,51 @@ function runTests() {
   const kixRow = document.getElementById('compare-item-KIX');
   assert(kixRow.innerHTML.includes('Query Failed'), 'Row HTML should contain Query Failed for generic errors');
   console.log('✓ Generic error rendering test PASSED');
+
+  // Test 7: DateUtils.addDays
+  const addedDays1 = DateUtils.addDays('2024-10-10', 5);
+  assert(addedDays1 === '2024-10-15', `Expected 2024-10-15, got ${addedDays1}`);
+
+  const monthRollover = DateUtils.addDays('2024-10-28', 5);
+  assert(monthRollover === '2024-11-02', `Expected 2024-11-02, got ${monthRollover}`);
+
+  const yearRollover = DateUtils.addDays('2024-12-30', 5);
+  assert(yearRollover === '2025-01-04', `Expected 2025-01-04, got ${yearRollover}`);
+  console.log('✓ DateUtils.addDays tests PASSED');
+
+  // Test 8: DateUtils.getReturnDateOptions
+  const returnOptions = DateUtils.getReturnDateOptions('2024-10-10', 30);
+  assert(returnOptions.length === 30, 'Should generate 30 options');
+  assert(returnOptions[0].days === 1, 'First option should be 1 day');
+  assert(returnOptions[0].isoDate === '2024-10-11', 'First option isoDate should be 2024-10-11');
+  assert(returnOptions[0].displayText === '2024/10/11 (1 day)', `Expected '2024/10/11 (1 day)', got '${returnOptions[0].displayText}'`);
+  assert(returnOptions[4].days === 5, 'Fifth option should be 5 days');
+  assert(returnOptions[4].displayText === '2024/10/15 (5 days)', `Expected '2024/10/15 (5 days)', got '${returnOptions[4].displayText}'`);
+  assert(returnOptions[29].days === 30, 'Thirtieth option should be 30 days');
+  assert(returnOptions[29].displayText === '2024/11/09 (30 days)', `Expected '2024/11/09 (30 days)', got '${returnOptions[29].displayText}'`);
+  console.log('✓ DateUtils.getReturnDateOptions tests PASSED');
+
+  // Test 9: SingleDayCompareRenderer with custom return date
+  const customReturnRenderer = new SingleDayCompareRenderer(mockDomElements);
+  customReturnRenderer.renderInitialList('TPE', [{ code: 'FUK', name: 'Fukuoka', country: 'Japan' }], '2024-10-10', '2024-10-17');
+  const fukInfo = customReturnRenderer.itemsData.get('FUK');
+  assert(fukInfo.returnDateStr === '2024-10-17', 'Should store custom returnDateStr');
+
+  customReturnRenderer.updateItemResult('FUK', {
+    data: {
+      calendars: [
+        {
+          departureDate: '2024-10-10',
+          price: { amount: 9800, currencyCode: 'TWD' },
+          status: 'available'
+        }
+      ]
+    }
+  });
+
+  const fukRow = document.getElementById('compare-item-FUK');
+  assert(fukRow.innerHTML.includes('ondCityCode[1].month=10/2024&amp;ondCityCode[1].day=17') || fukRow.innerHTML.includes('ondCityCode[1].month=10/2024&ondCityCode[1].day=17'), 'Booking URL should have return day=17 and month=10/2024');
+  console.log('✓ Custom return date rendering and booking link test PASSED');
 
   console.log('=== All Single Day Compare Tests PASSED ===');
 }

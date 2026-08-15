@@ -37,6 +37,7 @@ export class DomElements {
       'sectionMonthSearch',
       'sectionCompareSearch',
       'inputSingleDate',
+      'selectCompareReturnDate',
       'containerCountryGroups',
       'containerAirportChips',
       'btnSelectAllAirports',

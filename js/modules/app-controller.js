@@ -2,8 +2,8 @@
  * Application Controller Module
  * Main application orchestrator that coordinates all modules
  */
-import { DEFAULT_AIRPORTS, DEFAULT_SEARCH, EXTERNAL_URLS } from '../settings.module.js?v=1.2.1';
-import { SingleDayCompareRenderer } from './single-day-compare-renderer.js?v=1.2.1';
+import { DEFAULT_AIRPORTS, DEFAULT_SEARCH, EXTERNAL_URLS } from '../settings.module.js?v=1.2.2';
+import { SingleDayCompareRenderer } from './single-day-compare-renderer.js?v=1.2.2';
 
 export class AppController {
   constructor(
@@ -171,6 +171,15 @@ export class AppController {
       }
     });
 
+    // Departure date change in Compare Mode
+    const inputSingleDateEl = this.domElements.get('inputSingleDate');
+    inputSingleDateEl?.addEventListener('change', () => {
+      this.updateCompareReturnDateDropdown();
+    });
+    inputSingleDateEl?.addEventListener('input', () => {
+      this.updateCompareReturnDateDropdown();
+    });
+
     // Delegate clicks on CORS retry / help badges inside the comparison list
     this.domElements.get('containerCompareList')?.addEventListener('click', (e) => {
       if (e.target.closest('.btn-cors-trigger')) {
@@ -191,6 +200,7 @@ export class AppController {
       const defaultDate = new Date();
       defaultDate.setMonth(defaultDate.getMonth() + 1);
       inputSingleDate.value = defaultDate.toISOString().split('T')[0];
+      this.populateCompareReturnDateDropdown(inputSingleDate.value, 5);
     }
   }
 
@@ -228,10 +238,12 @@ export class AppController {
       sectionMonth?.classList.add('hidden');
 
       containerResult?.classList.add('hidden');
+      this.updateCompareReturnDateDropdown();
     }
   }
 
   setupCompareModeUI() {
+    this.updateCompareReturnDateDropdown();
     this.renderCompareCountryGroups();
     this.renderCompareAirportChips();
   }
@@ -336,9 +348,62 @@ export class AppController {
     this.renderCompareAirportChips();
   }
 
+  /**
+   * Populate the Return Date dropdown options with yyyy/MM/dd (? day/days)
+   * @param {string} departureDateStr - Departure date string in YYYY-MM-DD format
+   * @param {number} selectedDays - Duration days to keep selected (default 5)
+   */
+  populateCompareReturnDateDropdown(departureDateStr, selectedDays = 5) {
+    const selectReturnDate = this.domElements.get('selectCompareReturnDate');
+    if (!selectReturnDate || !departureDateStr) return;
+
+    const options = this.dateUtils.getReturnDateOptions(departureDateStr, 30);
+    selectReturnDate.innerHTML = '';
+
+    const targetDays = Number(selectedDays) || 5;
+
+    options.forEach(opt => {
+      const optionEl = document.createElement('option');
+      optionEl.value = String(opt.days);
+      optionEl.setAttribute('data-iso-date', opt.isoDate);
+      optionEl.textContent = opt.displayText;
+      if (opt.days === targetDays) {
+        optionEl.selected = true;
+      }
+      selectReturnDate.appendChild(optionEl);
+    });
+  }
+
+  /**
+   * Recalculate and update the Return Date dropdown when departure date changes
+   */
+  updateCompareReturnDateDropdown() {
+    const inputSingleDate = this.domElements.get('inputSingleDate');
+    const selectReturnDate = this.domElements.get('selectCompareReturnDate');
+    if (!selectReturnDate) return;
+
+    let departureDate = inputSingleDate?.value;
+    if (!departureDate) {
+      const defaultDate = new Date();
+      defaultDate.setMonth(defaultDate.getMonth() + 1);
+      departureDate = defaultDate.toISOString().split('T')[0];
+      if (inputSingleDate) {
+        inputSingleDate.value = departureDate;
+      }
+    }
+
+    const currentSelectedDays = Number(selectReturnDate.value) || 5;
+    this.populateCompareReturnDateDropdown(departureDate, currentSelectedDays);
+  }
+
   async handleSingleDayCompareSearch() {
     const departure = this.domElements.get('selectAirportFrom')?.getAttribute('data-selected-value') || 'TPE';
     const departureDate = this.domElements.get('inputSingleDate')?.value || '2024-10-10';
+    const selectReturnDate = this.domElements.get('selectCompareReturnDate');
+    const returnOffset = Number(selectReturnDate?.value) || 5;
+    const returnDateStr = this.dateUtils.addDays(departureDate, returnOffset);
+    const dayLabel = returnOffset === 1 ? 'day' : 'days';
+
     const containerClass = this.domElements.get('containerClass');
     const containerBankDiscount = this.domElements.get('containerBankDiscount');
     const containerCompareResult = this.domElements.get('containerCompareResult');
@@ -357,11 +422,11 @@ export class AppController {
 
     containerCompareResult?.classList.remove('hidden');
     if (spanCompareSummary) {
-      spanCompareSummary.textContent = `${departure} Departure | ${departureDate} | ${selectedDestinations.length} destination${selectedDestinations.length > 1 ? 's' : ''}`;
+      spanCompareSummary.textContent = `${departure} Departure | ${departureDate} ~ ${returnDateStr} (${returnOffset} ${dayLabel}) | ${selectedDestinations.length} destination${selectedDestinations.length > 1 ? 's' : ''}`;
     }
 
-    // Render initial list with loading spinners
-    this.singleDayCompareRenderer.renderInitialList(departure, selectedDestinations, departureDate);
+    // Render initial list with loading spinners and custom return date
+    this.singleDayCompareRenderer.renderInitialList(departure, selectedDestinations, departureDate, returnDateStr);
 
     let corsModalShown = false;
 
@@ -374,7 +439,7 @@ export class AppController {
           : Promise.resolve('');
 
         const [flightData, flightNumbers] = await Promise.all([
-          this.flightSearch.searchFlight(departure, dest.code, departureDate, cabin, corporateCode),
+          this.flightSearch.searchFlight(departure, dest.code, departureDate, cabin, corporateCode, returnDateStr),
           flightNumbersPromise
         ]);
 

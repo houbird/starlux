@@ -99,6 +99,44 @@
           <label for="inputSingleDate" class="w-full text-sm font-medium text-gray-300">Departure Date 🗓️:</label>
           <input type="date" id="inputSingleDate" class="w-full bg-gray-900 border border-gray-700 rounded p-2 mt-2 sm:mt-0 sm:ml-2 text-white">
         </div>
+        <div class="flex flex-col sm:flex-row items-center justify-between">
+          <label for="selectCompareReturnDate" class="w-full text-sm font-medium text-gray-300">Return Date 🗓️:</label>
+          <select id="selectCompareReturnDate" class="w-full bg-gray-900 border border-gray-700 rounded p-2 mt-2 sm:mt-0 sm:ml-2 text-white focus:outline-none focus:border-primary">
+            <!-- Populated dynamically: yyyy/MM/dd (? day/days) -->
+          </select>
+        </div>
+        <script>
+          (function() {
+            try {
+              const inputSingleDate = document.getElementById('inputSingleDate');
+              const selectReturnDate = document.getElementById('selectCompareReturnDate');
+              if (inputSingleDate && selectReturnDate) {
+                if (!inputSingleDate.value) {
+                  const defaultDate = new Date();
+                  defaultDate.setMonth(defaultDate.getMonth() + 1);
+                  inputSingleDate.value = defaultDate.toISOString().split('T')[0];
+                }
+                const [year, month, day] = inputSingleDate.value.split('-').map(Number);
+                selectReturnDate.innerHTML = '';
+                for (let days = 1; days <= 30; days++) {
+                  const d = new Date(year, month - 1, day);
+                  d.setDate(d.getDate() + days);
+                  const yStr = d.getFullYear();
+                  const mStr = String(d.getMonth() + 1).padStart(2, '0');
+                  const dStr = String(d.getDate()).padStart(2, '0');
+                  const opt = document.createElement('option');
+                  opt.value = String(days);
+                  opt.setAttribute('data-iso-date', `${yStr}-${mStr}-${dStr}`);
+                  opt.textContent = `${yStr}/${mStr}/${dStr} (${days} ${days === 1 ? 'day' : 'days'})`;
+                  if (days === 5) opt.selected = true;
+                  selectReturnDate.appendChild(opt);
+                }
+              }
+            } catch (e) {
+              console.error('Initial return date population error:', e);
+            }
+          })();
+        </script>
 
         <div class="flex flex-col gap-1.5">
           <div class="flex items-center justify-between">
@@ -267,6 +305,6 @@
   <script src="js/data.test.js"></script>
 
   <!-- Load modular application -->
-  <script type="module" src="js/main.js?v=1.2.1"></script>
+  <script type="module" src="js/main.js?v=1.2.2"></script>
 </body>
 </html>

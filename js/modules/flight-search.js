@@ -2,7 +2,7 @@
  * Flight Search Module
  * Handles flight search API calls and data processing
  */
-import { API_ENDPOINTS, DEFAULT_TRAVELERS, DEFAULT_HEADERS, DEFAULT_SEARCH } from '../settings.module.js?v=1.2.1';
+import { API_ENDPOINTS, DEFAULT_TRAVELERS, DEFAULT_HEADERS, DEFAULT_SEARCH } from '../settings.module.js?v=1.2.2';
 
 export class FlightSearch {
   constructor() {
@@ -12,10 +12,13 @@ export class FlightSearch {
     this.returnDaysOffset = DEFAULT_SEARCH.RETURN_DAYS_OFFSET;
   }
 
-  async searchFlight(departure, arrival, departureDate, cabin, corporateCode) {
-    const returnDateObj = new Date(departureDate);
-    returnDateObj.setDate(returnDateObj.getDate() + this.returnDaysOffset);
-    const returnDate = returnDateObj.toISOString().split('T')[0];
+  async searchFlight(departure, arrival, departureDate, cabin, corporateCode, customReturnDate = null) {
+    let returnDate = customReturnDate;
+    if (!returnDate) {
+      const returnDateObj = new Date(departureDate);
+      returnDateObj.setDate(returnDateObj.getDate() + this.returnDaysOffset);
+      returnDate = returnDateObj.toISOString().split('T')[0];
+    }
 
     const data = {
       cabin,

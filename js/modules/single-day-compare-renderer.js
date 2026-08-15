@@ -17,17 +17,25 @@ export class SingleDayCompareRenderer {
    * @param {string} departure - Origin airport code
    * @param {Array<Object>} destinations - Array of airport objects { code, name, country, location, region }
    * @param {string} departureDate - Departure date string (YYYY-MM-DD)
+   * @param {string|null} customReturnDateStr - Optional custom return date string (YYYY-MM-DD)
    */
-  renderInitialList(departure, destinations, departureDate) {
+  renderInitialList(departure, destinations, departureDate, customReturnDateStr = null) {
     const containerCompareList = this.domElements.get('containerCompareList');
     if (!containerCompareList) return;
 
     this.itemsData.clear();
     containerCompareList.innerHTML = '';
 
-    const returnDateObj = new Date(departureDate);
-    returnDateObj.setDate(returnDateObj.getDate() + 5);
-    const returnDateStr = returnDateObj.toISOString().split('T')[0];
+    let returnDateStr = customReturnDateStr;
+    if (!returnDateStr) {
+      const [year, month, day] = departureDate.split('-').map(Number);
+      const returnDateObj = new Date(year, month - 1, day);
+      returnDateObj.setDate(returnDateObj.getDate() + 5);
+      const y = returnDateObj.getFullYear();
+      const m = String(returnDateObj.getMonth() + 1).padStart(2, '0');
+      const d = String(returnDateObj.getDate()).padStart(2, '0');
+      returnDateStr = `${y}-${m}-${d}`;
+    }
 
     destinations.forEach(dest => {
       this.itemsData.set(dest.code, {

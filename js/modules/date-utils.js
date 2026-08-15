@@ -37,4 +37,53 @@ export class DateUtils {
     const month = String(now.getMonth() + 2).padStart(2, '0');
     return `${year}-${month}`;
   }
+
+  /**
+   * Add a given number of days to a date string (YYYY-MM-DD)
+   * @param {string} dateStr - Date in YYYY-MM-DD format
+   * @param {number} days - Number of days to add
+   * @returns {string} Date in YYYY-MM-DD format
+   */
+  static addDays(dateStr, days) {
+    if (!dateStr) return '';
+    const [year, month, day] = dateStr.split('-').map(Number);
+    const date = new Date(year, month - 1, day);
+    date.setDate(date.getDate() + Number(days));
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  }
+
+  /**
+   * Format ISO date string (YYYY-MM-DD) to slash-separated format (YYYY/MM/DD)
+   * @param {string} isoDateStr - Date in YYYY-MM-DD format
+   * @returns {string} Date in YYYY/MM/DD format
+   */
+  static formatDisplayDate(isoDateStr) {
+    if (!isoDateStr) return '';
+    return isoDateStr.replace(/-/g, '/');
+  }
+
+  /**
+   * Generate return date options for Single-Day Comparison dropdown
+   * @param {string} departureDateStr - Departure date in YYYY-MM-DD format
+   * @param {number} maxDays - Maximum trip duration days (default 30)
+   * @returns {Array<{days: number, isoDate: string, displayText: string}>}
+   */
+  static getReturnDateOptions(departureDateStr, maxDays = 30) {
+    if (!departureDateStr) return [];
+    const options = [];
+    for (let days = 1; days <= maxDays; days++) {
+      const isoDate = this.addDays(departureDateStr, days);
+      const displayDate = this.formatDisplayDate(isoDate);
+      const dayLabel = days === 1 ? 'day' : 'days';
+      options.push({
+        days,
+        isoDate,
+        displayText: `${displayDate} (${days} ${dayLabel})`
+      });
+    }
+    return options;
+  }
 }
