@@ -214,7 +214,7 @@ export class AppController {
     const containerCompareResult = this.domElements.get('containerCompareResult');
 
     const activeClasses = ['bg-primary', 'text-gray-800', 'shadow'];
-    const inactiveClasses = ['bg-gray-600', 'text-white', 'hover:bg-gray-500'];
+    const inactiveClasses = ['text-white', 'hover:bg-gray-500'];
 
     if (mode === 'month') {
       tabMonth?.classList.add(...activeClasses);
