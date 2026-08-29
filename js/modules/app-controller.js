@@ -277,15 +277,17 @@ export class AppController {
       const isAllSelected = countryAirports.every(a => this.selectedCompareDestinations.has(a.code));
       const isSomeSelected = countryAirports.some(a => this.selectedCompareDestinations.has(a.code));
 
+      const baseClasses = 'country-group-btn text-xs px-2.5 py-1 rounded-full cursor-pointer transition-all flex items-center gap-1';
+
       if (isAllSelected) {
-        btn.className = 'country-group-btn text-xs px-2.5 py-1 rounded-full bg-primary text-gray-800 font-semibold cursor-pointer transition-all flex items-center gap-1 shadow-sm';
+        btn.className = `${baseClasses} bg-primary text-gray-800 font-semibold shadow-sm`;
       } else if (isSomeSelected) {
-        btn.className = 'country-group-btn text-xs px-2.5 py-1 rounded-full border border-primary/60 bg-gray-700 text-primary font-medium cursor-pointer transition-all flex items-center gap-1';
+        btn.className = `${baseClasses} border border-primary/60 bg-gray-700 text-primary font-medium`;
       } else {
-        btn.className = 'country-group-btn text-xs px-2.5 py-1 rounded-full bg-gray-600 text-white hover:bg-gray-500 cursor-pointer transition-all flex items-center gap-1';
+        btn.className = `${baseClasses} bg-gray-600 text-white hover:bg-gray-500`;
       }
 
-      btn.innerHTML = `<span>${country}</span> <span class="text-[10px] opacity-75">(${countryAirports.length})</span>`;
+      btn.innerHTML = `<span class="text-xs">${country}</span> <span class="text-[10px] opacity-75">(${countryAirports.length})</span>`;
 
       btn.addEventListener('click', () => {
         const allSelected = countryAirports.every(a => this.selectedCompareDestinations.has(a.code));
