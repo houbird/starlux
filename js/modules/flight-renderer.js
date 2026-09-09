@@ -11,7 +11,7 @@ export class FlightRenderer {
     this.bookingUrl = EXTERNAL_URLS.STARLUX_BOOKING;
   }
 
-  renderFlightInfo(data, holidays = {}) {
+  renderFlightInfo(data, holidays = {}, flightDetailsHtml = '') {
     const calendars = data.data.calendars;
     const departure = this.domElements.get('selectAirportFrom').getAttribute('data-selected-value');
     const arrival = this.domElements.get('selectAirportTo').getAttribute('data-selected-value');
@@ -36,7 +36,7 @@ export class FlightRenderer {
     const avgPrice = (prices.reduce((a, b) => a + b, 0) / prices.length).toFixed(0);
 
     this.renderCalendar(daysArray, holidays, minPrice, maxPrice, departure, arrival);
-    this.renderStatistics(minPrice, maxPrice, avgPrice);
+    this.renderStatistics(minPrice, maxPrice, avgPrice, flightDetailsHtml);
   }
 
   renderCalendar(daysArray, holidays, minPrice, maxPrice, departure, arrival) {
@@ -120,8 +120,17 @@ export class FlightRenderer {
     `;
   }
 
-  renderStatistics(minPrice, maxPrice, avgPrice) {
+  renderStatistics(minPrice, maxPrice, avgPrice, flightDetailsHtml = '') {
     const containerStatistics = this.domElements.get('containerStatistics');
+    const flightInfoHtml = flightDetailsHtml 
+      ? `<div class="w-full mt-4 pt-4 border-t border-gray-700">
+          <h3 class="text-lg font-semibold text-gray-400 mb-3">Available Flights</h3>
+          <div class="max-h-96 overflow-y-auto">
+            ${flightDetailsHtml}
+          </div>
+        </div>`
+      : '';
+
     containerStatistics.innerHTML = `
     <div class="p-4 rounded-lg shadow-lg">
       <h2 class="text-2xl font-bold mb-4 text-white">Overview</h2>
@@ -139,6 +148,7 @@ export class FlightRenderer {
           <div class="text-gray-400 font-semibold text-3xl">${avgPrice}</div>
         </div>
       </div>
+      ${flightInfoHtml}
     </div>
     `;
   }

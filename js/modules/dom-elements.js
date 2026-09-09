@@ -25,8 +25,28 @@ export class DomElements {
       'containerClass',
       'containerBankDiscount',
       'modalCORS',
+      'modalCORSBackdrop',
+      'modalCORSCard',
+      'btnModalCORSClose',
+      'btnModalCORSOk',
       'version-display',
-      'airportSuggestionsContainer'
+      'airportSuggestionsContainer',
+      'flightCountBadge',
+      'tabSearchMonth',
+      'tabCompareSingleDay',
+      'sectionMonthSearch',
+      'sectionCompareSearch',
+      'inputSingleDate',
+      'selectCompareReturnDate',
+      'containerCountryGroups',
+      'containerAirportChips',
+      'btnSelectAllAirports',
+      'btnClearAllAirports',
+      'btnCompareSearch',
+      'containerCompareResult',
+      'containerCompareList',
+      'spanCompareSummary',
+      'selectCompareSort'
     ];
 
     elementIds.forEach(id => {
@@ -47,10 +67,30 @@ export class DomElements {
   }
 
   showModal(modalId) {
-    this.elements[modalId]?.classList.remove('hidden');
+    const el = this.elements[modalId] || (typeof document !== 'undefined' ? document.getElementById(modalId) : null);
+    if (el) {
+      el.classList.remove('hidden');
+      el.style.display = 'flex';
+    }
   }
 
   hideModal(modalId) {
-    this.elements[modalId]?.classList.add('hidden');
+    const el = this.elements[modalId] || (typeof document !== 'undefined' ? document.getElementById(modalId) : null);
+    if (el) {
+      el.classList.add('hidden');
+      el.style.display = 'none';
+    }
+  }
+
+  updateFlightCountBadge(count) {
+    const badge = this.elements.flightCountBadge;
+    if (!badge) return;
+    
+    if (count > 0) {
+      badge.textContent = `${count} flight${count > 1 ? 's' : ''}`;
+      badge.classList.remove('hidden');
+    } else {
+      badge.classList.add('hidden');
+    }
   }
 }

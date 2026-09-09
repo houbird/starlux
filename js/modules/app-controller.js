@@ -2,7 +2,8 @@
  * Application Controller Module
  * Main application orchestrator that coordinates all modules
  */
-import { DEFAULT_AIRPORTS, DEFAULT_SEARCH, EXTERNAL_URLS } from '../settings.module.js';
+import { DEFAULT_AIRPORTS, DEFAULT_SEARCH, EXTERNAL_URLS } from '../settings.module.js?v=1.2.2';
+import { SingleDayCompareRenderer } from './single-day-compare-renderer.js?v=1.2.2';
 
 export class AppController {
   constructor(
@@ -14,7 +15,9 @@ export class AppController {
     uiStateManager,
     urlParamsHandler,
     versionDisplay,
-    dateUtils
+    dateUtils,
+    flightNumberService = null,
+    singleDayCompareRenderer = null
   ) {
     this.domElements = domElements;
     this.airportManager = airportManager;
@@ -25,6 +28,10 @@ export class AppController {
     this.urlParamsHandler = urlParamsHandler;
     this.versionDisplay = versionDisplay;
     this.dateUtils = dateUtils;
+    this.flightNumberService = flightNumberService;
+    this.singleDayCompareRenderer = singleDayCompareRenderer || new SingleDayCompareRenderer(domElements);
+    this.selectedCompareDestinations = new Set(['NRT', 'KIX', 'FUK', 'CTS', 'OKA']); // Default selections
+    this.currentMode = 'month';
   }
 
   initialize() {
@@ -32,6 +39,7 @@ export class AppController {
     this.setupButtonGroups();
     this.setupEventListeners();
     this.setupInitialState();
+    this.setupCompareModeUI();
     this.handleUrlParameters();
     this.versionDisplay.displayVersion();
   }
@@ -46,6 +54,8 @@ export class AppController {
       onChange: (value) => {
         console.log('Selected FROM value:', value);
         this.airportManager.updateAirportSelectorStyle(selectAirportFrom, value);
+        this.updateFlightCount();
+        this.renderCompareAirportChips();
       }
     });
 
@@ -55,10 +65,13 @@ export class AppController {
       onChange: (value) => {
         console.log('Selected TO value:', value);
         this.airportManager.updateAirportSelectorStyle(selectAirportTo, value);
+        this.updateFlightCount();
       }
     });
 
     this.setupDropdownInteractions();
+    // Initial flight count update
+    this.updateFlightCount();
   }
 
   setupDropdownInteractions() {
@@ -92,14 +105,42 @@ export class AppController {
   }
 
   setupEventListeners() {
+    // Mode switcher tabs
+    this.domElements.get('tabSearchMonth')?.addEventListener('click', () => {
+      this.switchMode('month');
+    });
+
+    this.domElements.get('tabCompareSingleDay')?.addEventListener('click', () => {
+      this.switchMode('compare');
+    });
+
     // Reverse button
     this.domElements.get('btnReverse')?.addEventListener('click', () => {
       this.handleReverseAirports();
     });
 
-    // Search button
+    // Search button (Monthly mode)
     this.domElements.get('btnSearch')?.addEventListener('click', () => {
       this.handleFlightSearch();
+    });
+
+    // Single day compare search button
+    this.domElements.get('btnCompareSearch')?.addEventListener('click', () => {
+      this.handleSingleDayCompareSearch();
+    });
+
+    // Compare sort dropdown
+    this.domElements.get('selectCompareSort')?.addEventListener('change', (e) => {
+      this.singleDayCompareRenderer.sortList(e.target.value);
+    });
+
+    // Compare multi-select buttons
+    this.domElements.get('btnSelectAllAirports')?.addEventListener('click', () => {
+      this.selectAllCompareAirports();
+    });
+
+    this.domElements.get('btnClearAllAirports')?.addEventListener('click', () => {
+      this.clearAllCompareAirports();
     });
 
     // Month navigation
@@ -111,9 +152,39 @@ export class AppController {
       this.updateInputMonthValue(1);
     });
 
-    // Modal close
-    this.domElements.get('modalCORS')?.addEventListener('click', () => {
-      this.domElements.hideModal('modalCORS');
+    // Modal controls
+    const modalCORS = this.domElements.get('modalCORS');
+    const modalCORSBackdrop = this.domElements.get('modalCORSBackdrop');
+    const btnModalCORSClose = this.domElements.get('btnModalCORSClose');
+    const btnModalCORSOk = this.domElements.get('btnModalCORSOk');
+
+    const closeModal = () => this.domElements.hideModal('modalCORS');
+
+    modalCORSBackdrop?.addEventListener('click', closeModal);
+    btnModalCORSClose?.addEventListener('click', closeModal);
+    btnModalCORSOk?.addEventListener('click', closeModal);
+
+    // Close modal on Escape key
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && modalCORS && !modalCORS.classList.contains('hidden')) {
+        closeModal();
+      }
+    });
+
+    // Departure date change in Compare Mode
+    const inputSingleDateEl = this.domElements.get('inputSingleDate');
+    inputSingleDateEl?.addEventListener('change', () => {
+      this.updateCompareReturnDateDropdown();
+    });
+    inputSingleDateEl?.addEventListener('input', () => {
+      this.updateCompareReturnDateDropdown();
+    });
+
+    // Delegate clicks on CORS retry / help badges inside the comparison list
+    this.domElements.get('containerCompareList')?.addEventListener('click', (e) => {
+      if (e.target.closest('.btn-cors-trigger')) {
+        this.domElements.showModal('modalCORS');
+      }
     });
   }
 
@@ -122,6 +193,286 @@ export class AppController {
     if (inputMonth) {
       inputMonth.value = this.dateUtils.getCurrentMonth();
     }
+
+    const inputSingleDate = this.domElements.get('inputSingleDate');
+    if (inputSingleDate) {
+      // Default to today + 1 month
+      const defaultDate = new Date();
+      defaultDate.setMonth(defaultDate.getMonth() + 1);
+      inputSingleDate.value = defaultDate.toISOString().split('T')[0];
+      this.populateCompareReturnDateDropdown(inputSingleDate.value, 5);
+    }
+  }
+
+  switchMode(mode) {
+    this.currentMode = mode;
+    const tabMonth = this.domElements.get('tabSearchMonth');
+    const tabCompare = this.domElements.get('tabCompareSingleDay');
+    const sectionMonth = this.domElements.get('sectionMonthSearch');
+    const sectionCompare = this.domElements.get('sectionCompareSearch');
+    const containerResult = this.domElements.get('containerResult');
+    const containerCompareResult = this.domElements.get('containerCompareResult');
+
+    const activeClasses = ['bg-primary', 'text-gray-800', 'shadow'];
+    const inactiveClasses = ['text-white', 'hover:bg-gray-500'];
+
+    if (mode === 'month') {
+      tabMonth?.classList.add(...activeClasses);
+      tabMonth?.classList.remove(...inactiveClasses);
+
+      tabCompare?.classList.remove(...activeClasses);
+      tabCompare?.classList.add(...inactiveClasses);
+
+      sectionMonth?.classList.remove('hidden');
+      sectionCompare?.classList.add('hidden');
+
+      containerCompareResult?.classList.add('hidden');
+    } else {
+      tabCompare?.classList.add(...activeClasses);
+      tabCompare?.classList.remove(...inactiveClasses);
+
+      tabMonth?.classList.remove(...activeClasses);
+      tabMonth?.classList.add(...inactiveClasses);
+
+      sectionCompare?.classList.remove('hidden');
+      sectionMonth?.classList.add('hidden');
+
+      containerResult?.classList.add('hidden');
+      this.updateCompareReturnDateDropdown();
+    }
+  }
+
+  setupCompareModeUI() {
+    this.updateCompareReturnDateDropdown();
+    this.renderCompareCountryGroups();
+    this.renderCompareAirportChips();
+  }
+
+  getAvailableCompareAirports() {
+    const fromCode = this.domElements.get('selectAirportFrom')?.getAttribute('data-selected-value') || 'TPE';
+    return this.airportManager.airports.filter(a => !a.disabled && a.code !== fromCode);
+  }
+
+  renderCompareCountryGroups() {
+    const container = this.domElements.get('containerCountryGroups');
+    if (!container) return;
+
+    container.innerHTML = '';
+    const airports = this.getAvailableCompareAirports();
+
+    // Group airports by country
+    const countryMap = new Map();
+    airports.forEach(airport => {
+      const country = airport.country || 'Other';
+      if (!countryMap.has(country)) {
+        countryMap.set(country, []);
+      }
+      countryMap.get(country).push(airport);
+    });
+
+    countryMap.forEach((countryAirports, country) => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+
+      const isAllSelected = countryAirports.every(a => this.selectedCompareDestinations.has(a.code));
+      const isSomeSelected = countryAirports.some(a => this.selectedCompareDestinations.has(a.code));
+
+      const baseClasses = 'country-group-btn text-xs px-2.5 py-1 rounded-full cursor-pointer transition-all flex items-center gap-1';
+
+      if (isAllSelected) {
+        btn.className = `${baseClasses} bg-primary text-gray-800 font-semibold shadow-sm`;
+      } else if (isSomeSelected) {
+        btn.className = `${baseClasses} border border-primary/60 bg-gray-700 text-primary font-medium`;
+      } else {
+        btn.className = `${baseClasses} bg-gray-600 text-white hover:bg-gray-500`;
+      }
+
+      btn.innerHTML = `<span class="text-xs">${country}</span> <span class="text-[10px] opacity-75">(${countryAirports.length})</span>`;
+
+      btn.addEventListener('click', () => {
+        const allSelected = countryAirports.every(a => this.selectedCompareDestinations.has(a.code));
+        if (allSelected) {
+          countryAirports.forEach(a => this.selectedCompareDestinations.delete(a.code));
+        } else {
+          countryAirports.forEach(a => this.selectedCompareDestinations.add(a.code));
+        }
+        this.renderCompareCountryGroups();
+        this.renderCompareAirportChips();
+      });
+
+      container.appendChild(btn);
+    });
+  }
+
+  renderCompareAirportChips() {
+    const container = this.domElements.get('containerAirportChips');
+    if (!container) return;
+
+    container.innerHTML = '';
+    const airports = this.getAvailableCompareAirports();
+
+    airports.forEach(airport => {
+      const isSelected = this.selectedCompareDestinations.has(airport.code);
+
+      const chip = document.createElement('button');
+      chip.type = 'button';
+      chip.className = isSelected
+        ? 'px-2.5 py-1 rounded-full text-xs font-semibold transition-all cursor-pointer bg-primary text-gray-800 whitespace-nowrap shadow-sm'
+        : 'px-2.5 py-1 rounded-full text-xs transition-all cursor-pointer bg-gray-600 text-white hover:bg-gray-500 whitespace-nowrap';
+
+      chip.textContent = `${airport.code} ${airport.name}`;
+      chip.title = `${airport.code} - ${airport.name} (${airport.country})`;
+
+      chip.addEventListener('click', () => {
+        if (this.selectedCompareDestinations.has(airport.code)) {
+          this.selectedCompareDestinations.delete(airport.code);
+        } else {
+          this.selectedCompareDestinations.add(airport.code);
+        }
+        this.renderCompareCountryGroups();
+        this.renderCompareAirportChips();
+      });
+
+      container.appendChild(chip);
+    });
+  }
+
+  selectAllCompareAirports() {
+    const airports = this.getAvailableCompareAirports();
+    airports.forEach(a => this.selectedCompareDestinations.add(a.code));
+    this.renderCompareCountryGroups();
+    this.renderCompareAirportChips();
+  }
+
+  clearAllCompareAirports() {
+    this.selectedCompareDestinations.clear();
+    this.renderCompareCountryGroups();
+    this.renderCompareAirportChips();
+  }
+
+  /**
+   * Populate the Return Date dropdown options with yyyy/MM/dd (? day/days)
+   * @param {string} departureDateStr - Departure date string in YYYY-MM-DD format
+   * @param {number} selectedDays - Duration days to keep selected (default 5)
+   */
+  populateCompareReturnDateDropdown(departureDateStr, selectedDays = 5) {
+    const selectReturnDate = this.domElements.get('selectCompareReturnDate');
+    if (!selectReturnDate || !departureDateStr) return;
+
+    const options = this.dateUtils.getReturnDateOptions(departureDateStr, 30);
+    selectReturnDate.innerHTML = '';
+
+    const targetDays = Number(selectedDays) || 5;
+
+    options.forEach(opt => {
+      const optionEl = document.createElement('option');
+      optionEl.value = String(opt.days);
+      optionEl.setAttribute('data-iso-date', opt.isoDate);
+      optionEl.textContent = opt.displayText;
+      if (opt.days === targetDays) {
+        optionEl.selected = true;
+      }
+      selectReturnDate.appendChild(optionEl);
+    });
+  }
+
+  /**
+   * Recalculate and update the Return Date dropdown when departure date changes
+   */
+  updateCompareReturnDateDropdown() {
+    const inputSingleDate = this.domElements.get('inputSingleDate');
+    const selectReturnDate = this.domElements.get('selectCompareReturnDate');
+    if (!selectReturnDate) return;
+
+    let departureDate = inputSingleDate?.value;
+    if (!departureDate) {
+      const defaultDate = new Date();
+      defaultDate.setMonth(defaultDate.getMonth() + 1);
+      departureDate = defaultDate.toISOString().split('T')[0];
+      if (inputSingleDate) {
+        inputSingleDate.value = departureDate;
+      }
+    }
+
+    const currentSelectedDays = Number(selectReturnDate.value) || 5;
+    this.populateCompareReturnDateDropdown(departureDate, currentSelectedDays);
+  }
+
+  async handleSingleDayCompareSearch() {
+    const departure = this.domElements.get('selectAirportFrom')?.getAttribute('data-selected-value') || 'TPE';
+    const departureDate = this.domElements.get('inputSingleDate')?.value || '2024-10-10';
+    const selectReturnDate = this.domElements.get('selectCompareReturnDate');
+    const returnOffset = Number(selectReturnDate?.value) || 5;
+    const returnDateStr = this.dateUtils.addDays(departureDate, returnOffset);
+    const dayLabel = returnOffset === 1 ? 'day' : 'days';
+
+    const containerClass = this.domElements.get('containerClass');
+    const containerBankDiscount = this.domElements.get('containerBankDiscount');
+    const containerCompareResult = this.domElements.get('containerCompareResult');
+    const spanCompareSummary = this.domElements.get('spanCompareSummary');
+
+    const cabin = containerClass?.getAttribute('data-selected-value') || 'eco';
+    const corporateCode = containerBankDiscount?.getAttribute('data-selected-value') || 'COBRAND01';
+
+    const selectedCodes = Array.from(this.selectedCompareDestinations);
+    if (selectedCodes.length === 0) {
+      alert('Please select at least one destination airport to compare!');
+      return;
+    }
+
+    const selectedDestinations = this.airportManager.airports.filter(a => selectedCodes.includes(a.code));
+
+    containerCompareResult?.classList.remove('hidden');
+    if (spanCompareSummary) {
+      spanCompareSummary.textContent = `${departure} Departure | ${departureDate} ~ ${returnDateStr} (${returnOffset} ${dayLabel}) | ${selectedDestinations.length} destination${selectedDestinations.length > 1 ? 's' : ''}`;
+    }
+
+    // Render initial list with loading spinners and custom return date
+    this.singleDayCompareRenderer.renderInitialList(departure, selectedDestinations, departureDate, returnDateStr);
+
+    let corsModalShown = false;
+
+    // Concurrently fetch prices for each destination
+    selectedDestinations.forEach(async (dest) => {
+      try {
+        // Use compact flight numbers display, NOT full card HTML
+        const flightNumbersPromise = this.flightNumberService
+          ? this.flightNumberService.getFlightNumbersDisplay(departure, dest.code)
+          : Promise.resolve('');
+
+        const [flightData, flightNumbers] = await Promise.all([
+          this.flightSearch.searchFlight(departure, dest.code, departureDate, cabin, corporateCode, returnDateStr),
+          flightNumbersPromise
+        ]);
+
+        this.singleDayCompareRenderer.updateItemResult(dest.code, flightData, flightNumbers);
+      } catch (error) {
+        console.error(`Single day search failed for ${dest.code}:`, error);
+        const isCors = error.message === 'CORS_ERROR' ||
+          error.message.includes('403') ||
+          error.message.includes('CORS') ||
+          error.message.includes('Forbidden') ||
+          error.message.includes('corsdemo') ||
+          error.message.includes('Failed to fetch') ||
+          error.name === 'TypeError';
+
+        if (isCors) {
+          if (!corsModalShown) {
+            corsModalShown = true;
+            this.domElements.showModal('modalCORS');
+          }
+          this.singleDayCompareRenderer.updateItemResult(dest.code, { error: 'CORS_ERROR' });
+        } else {
+          this.singleDayCompareRenderer.updateItemResult(dest.code, { error: error.message || 'Network Error' });
+        }
+      }
+    });
+
+    // Initial sort
+    const sortVal = this.domElements.get('selectCompareSort')?.value || 'price-asc';
+    setTimeout(() => {
+      this.singleDayCompareRenderer.sortList(sortVal);
+    }, 100);
   }
 
   handleUrlParameters() {
@@ -145,6 +496,8 @@ export class AppController {
       onChange: (value) => {
         console.log('Selected FROM value (after reverse):', value);
         this.airportManager.updateAirportSelectorStyle(selectAirportFrom, value);
+        this.updateFlightCount();
+        this.renderCompareAirportChips();
       }
     });
 
@@ -155,11 +508,13 @@ export class AppController {
       onChange: (value) => {
         console.log('Selected TO value (after reverse):', value);
         this.airportManager.updateAirportSelectorStyle(selectAirportTo, value);
+        this.updateFlightCount();
       }
     });
 
     this.setupDropdownInteractions();
     this.displayAirportSuggestions();
+    this.updateFlightCount();
   }
 
   handleFlightSearch() {
@@ -216,20 +571,36 @@ export class AppController {
         departure, arrival, departureDate, returnDate, cabin, corporateCode
       );
 
-      // Fetch flight data and holidays concurrently
+      // Fetch flight data, holidays, and flight details concurrently
       const [year, month] = inputMonth.value.split('-');
-      const [flightData, holidays] = await Promise.all([
+      const requests = [
         this.flightSearch.searchFlight(departure, arrival, departureDate, cabin, corporateCode),
         this.holidayService.fetchHolidaysForMonth(year, month)
-      ]);
+      ];
+
+      // Add flight details request if service is available
+      if (this.flightNumberService) {
+        requests.push(this.flightNumberService.getFlightDetailsHtml(departure, arrival));
+      }
+
+      const results = await Promise.all(requests);
+      const [flightData, holidays, flightDetailsHtml = ''] = results;
 
       console.log('Flight data:', flightData);
-      this.flightRenderer.renderFlightInfo(flightData, holidays);
+      this.flightRenderer.renderFlightInfo(flightData, holidays, flightDetailsHtml);
       
     } catch (error) {
       console.error('Flight search failed:', error);
       
-      if (error.message === 'CORS_ERROR') {
+      const isCors = error.message === 'CORS_ERROR' ||
+        error.message.includes('403') ||
+        error.message.includes('CORS') ||
+        error.message.includes('Forbidden') ||
+        error.message.includes('corsdemo') ||
+        error.message.includes('Failed to fetch') ||
+        error.name === 'TypeError';
+
+      if (isCors) {
         console.error(`請到 ${EXTERNAL_URLS.CORS_DEMO} 啟用 CORS`);
         this.domElements.showModal('modalCORS');
       }
@@ -286,6 +657,32 @@ export class AppController {
       if (airportSuggestionsContainer) {
         airportSuggestionsContainer.innerHTML = '';
       }
+      
+      // Update flight count after selection
+      this.updateFlightCount();
+    }
+  }
+
+  async updateFlightCount() {
+    if (!this.flightNumberService) return;
+    
+    const selectAirportFrom = this.domElements.get('selectAirportFrom');
+    const selectAirportTo = this.domElements.get('selectAirportTo');
+    
+    const departure = selectAirportFrom?.getAttribute('data-selected-value');
+    const arrival = selectAirportTo?.getAttribute('data-selected-value');
+    
+    if (!departure || !arrival) {
+      this.domElements.updateFlightCountBadge(0);
+      return;
+    }
+    
+    try {
+      const count = await this.flightNumberService.getFlightCount(departure, arrival);
+      this.domElements.updateFlightCountBadge(count);
+    } catch (error) {
+      console.error('Failed to update flight count:', error);
+      this.domElements.updateFlightCountBadge(0);
     }
   }
 }
