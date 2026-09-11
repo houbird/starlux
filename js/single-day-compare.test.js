@@ -23,9 +23,17 @@ class MockElement {
       remove: (...classes) => classes.forEach(c => this.classList._set.delete(c)),
       contains: (c) => this.classList._set.has(c)
     };
-    this.innerHTML = '';
+    this._innerHTML = '';
     this.value = '';
     this.listeners = {};
+  }
+
+  get innerHTML() { return this._innerHTML; }
+  set innerHTML(val) {
+    this._innerHTML = val;
+    if (val === '') {
+      this.children = [];
+    }
   }
 
   setAttribute(k, v) { this.attributes[k] = String(v); }
@@ -225,6 +233,80 @@ function runTests() {
   const fukRow = document.getElementById('compare-item-FUK');
   assert(fukRow.innerHTML.includes('ondCityCode[1].month=10/2024&amp;ondCityCode[1].day=17') || fukRow.innerHTML.includes('ondCityCode[1].month=10/2024&ondCityCode[1].day=17'), 'Booking URL should have return day=17 and month=10/2024');
   console.log('✓ Custom return date rendering and booking link test PASSED');
+
+  // Test 10: Dynamic sorting as search results arrive progressively
+  const multiDestRenderer = new SingleDayCompareRenderer(mockDomElements);
+  const multiDestList = [
+    { code: 'CTS', name: 'Chitose', country: 'Japan' },
+    { code: 'FUK', name: 'Fukuoka', country: 'Japan' },
+    { code: 'HKD', name: 'Hakodate', country: 'Japan' },
+    { code: 'NRT', name: 'Narita', country: 'Japan' },
+    { code: 'SHI', name: 'Shimojishima', country: 'Japan' }
+  ];
+  multiDestRenderer.renderInitialList('TPE', multiDestList, '2026-10-11');
+  const multiContainer = mockDomElements.get('containerCompareList');
+
+  // Initially all 5 are loading and sorted by airport code A-Z
+  assert(multiContainer.children[0].id === 'compare-item-CTS', 'Initial 1st: CTS');
+  assert(multiContainer.children[4].id === 'compare-item-SHI', 'Initial 5th: SHI');
+
+  // CTS resolves first with $11,030
+  multiDestRenderer.updateItemResult('CTS', {
+    data: { calendars: [{ departureDate: '2026-10-11', price: { amount: 11030, currencyCode: 'TWD' }, status: 'available' }] }
+  });
+  // CTS has price so it moves to top; remaining 4 still loading
+  assert(multiContainer.children[0].id === 'compare-item-CTS', 'CTS with price should be at top');
+
+  // HKD resolves as unavailable
+  multiDestRenderer.updateItemResult('HKD', {
+    data: { calendars: [{ departureDate: '2026-10-11', status: 'unavailable' }] }
+  });
+
+  // NRT resolves with $7,046 (cheaper than CTS)
+  multiDestRenderer.updateItemResult('NRT', {
+    data: { calendars: [{ departureDate: '2026-10-11', price: { amount: 7046, currencyCode: 'TWD' }, status: 'available' }] }
+  });
+  // NRT should now be above CTS!
+  assert(multiContainer.children[0].id === 'compare-item-NRT', 'NRT ($7,046) should be above CTS ($11,030)');
+  assert(multiContainer.children[1].id === 'compare-item-CTS', 'CTS ($11,030) should be 2nd');
+
+  // SHI resolves with $5,366 (cheapest!)
+  multiDestRenderer.updateItemResult('SHI', {
+    data: { calendars: [{ departureDate: '2026-10-11', price: { amount: 5366, currencyCode: 'TWD' }, status: 'available' }] }
+  });
+  assert(multiContainer.children[0].id === 'compare-item-SHI', 'SHI ($5,366) should now be 1st');
+
+  // FUK resolves with $7,190
+  multiDestRenderer.updateItemResult('FUK', {
+    data: { calendars: [{ departureDate: '2026-10-11', price: { amount: 7190, currencyCode: 'TWD' }, status: 'available' }] }
+  });
+
+  // Final price-asc check: SHI ($5,366) < NRT ($7,046) < FUK ($7,190) < CTS ($11,030) < HKD (Unavailable)
+  assert(multiContainer.children[0].id === 'compare-item-SHI', 'Final 1st: SHI ($5,366)');
+  assert(multiContainer.children[1].id === 'compare-item-NRT', 'Final 2nd: NRT ($7,046)');
+  assert(multiContainer.children[2].id === 'compare-item-FUK', 'Final 3rd: FUK ($7,190)');
+  assert(multiContainer.children[3].id === 'compare-item-CTS', 'Final 4th: CTS ($11,030)');
+  assert(multiContainer.children[4].id === 'compare-item-HKD', 'Final 5th: HKD (Unavailable at bottom)');
+  console.log('✓ Dynamic progressive price sorting during search test PASSED');
+
+  // Test 11: Price descending sort with unavailable items
+  multiDestRenderer.sortList('price-desc');
+  // price-desc: CTS ($11,030) > FUK ($7,190) > NRT ($7,046) > SHI ($5,366) > HKD (Unavailable at bottom)
+  assert(multiContainer.children[0].id === 'compare-item-CTS', 'Desc 1st: CTS ($11,030)');
+  assert(multiContainer.children[1].id === 'compare-item-FUK', 'Desc 2nd: FUK ($7,190)');
+  assert(multiContainer.children[2].id === 'compare-item-NRT', 'Desc 3rd: NRT ($7,046)');
+  assert(multiContainer.children[3].id === 'compare-item-SHI', 'Desc 4th: SHI ($5,366)');
+  assert(multiContainer.children[4].id === 'compare-item-HKD', 'Desc 5th: HKD (Unavailable still at bottom)');
+  console.log('✓ Price descending sort with unavailable items test PASSED');
+
+  // Test 12: Code sorting A-Z
+  multiDestRenderer.sortList('code');
+  assert(multiContainer.children[0].id === 'compare-item-CTS', 'Code 1st: CTS');
+  assert(multiContainer.children[1].id === 'compare-item-FUK', 'Code 2nd: FUK');
+  assert(multiContainer.children[2].id === 'compare-item-HKD', 'Code 3rd: HKD');
+  assert(multiContainer.children[3].id === 'compare-item-NRT', 'Code 4th: NRT');
+  assert(multiContainer.children[4].id === 'compare-item-SHI', 'Code 5th: SHI');
+  console.log('✓ Airport code sorting test PASSED');
 
   console.log('=== All Single Day Compare Tests PASSED ===');
 }

@@ -10,6 +10,16 @@ export class SingleDayCompareRenderer {
     this.domElements = domElements;
     this.bookingUrl = EXTERNAL_URLS.STARLUX_BOOKING;
     this.itemsData = new Map(); // Store results for sorting
+    this.currentSortBy = 'price-asc';
+  }
+
+  /**
+   * Get the current sort criteria from the DOM select element or instance state
+   * @returns {string}
+   */
+  getCurrentSort() {
+    const select = this.domElements?.get ? this.domElements.get('selectCompareSort') : null;
+    return (select && select.value) ? select.value : (this.currentSortBy || 'price-asc');
   }
 
   /**
@@ -25,6 +35,7 @@ export class SingleDayCompareRenderer {
 
     this.itemsData.clear();
     containerCompareList.innerHTML = '';
+    this.currentSortBy = this.getCurrentSort();
 
     let returnDateStr = customReturnDateStr;
     if (!returnDateStr) {
@@ -76,6 +87,8 @@ export class SingleDayCompareRenderer {
 
       containerCompareList.appendChild(row);
     });
+
+    this.sortList(this.currentSortBy);
   }
 
   /**
@@ -94,6 +107,7 @@ export class SingleDayCompareRenderer {
 
     if (data.error) {
       itemInfo.status = 'error';
+      itemInfo.price = null;
       row.setAttribute('data-price', '999999');
       const isCorsError = data.error === 'CORS_ERROR' || (typeof data.error === 'string' && data.error.includes('CORS'));
       if (isCorsError) {
@@ -108,6 +122,8 @@ export class SingleDayCompareRenderer {
           <span class="text-xs text-red-400">❌ Query Failed</span>
         `;
       }
+      this.reevaluateLowestPrices();
+      this.sortList();
       return;
     }
 
@@ -116,10 +132,13 @@ export class SingleDayCompareRenderer {
 
     if (!targetCalendar || targetCalendar.status !== 'available' || !targetCalendar.price?.amount) {
       itemInfo.status = 'unavailable';
+      itemInfo.price = null;
       row.setAttribute('data-price', '999999');
       statusContainer.innerHTML = `
         <span class="text-xs text-gray-400 italic">Unavailable</span>
       `;
+      this.reevaluateLowestPrices();
+      this.sortList();
       return;
     }
 
@@ -155,6 +174,7 @@ export class SingleDayCompareRenderer {
     `;
 
     this.reevaluateLowestPrices();
+    this.sortList();
   }
 
   /**
@@ -173,7 +193,19 @@ export class SingleDayCompareRenderer {
       }
     });
 
-    if (loadedPrices.length === 0) return;
+    if (loadedPrices.length === 0) {
+      this.itemsData.forEach((info, code) => {
+        const row = document.getElementById(`compare-item-${code}`);
+        if (!row) return;
+        row.classList.remove('border-primary', 'shadow-md');
+        row.classList.add('border-gray-700');
+        const existingBadge = row.querySelector('.lowest-price-badge');
+        if (existingBadge) {
+          existingBadge.remove();
+        }
+      });
+      return;
+    }
 
     this.itemsData.forEach((info, code) => {
       const row = document.getElementById(`compare-item-${code}`);
@@ -203,25 +235,52 @@ export class SingleDayCompareRenderer {
 
   /**
    * Sort the rendered list items by price or code
-   * @param {string} sortBy - 'price-asc', 'price-desc', 'code'
+   * @param {string|null} sortBy - 'price-asc', 'price-desc', 'code', or null to use current sort
    */
-  sortList(sortBy = 'price-asc') {
-    const containerCompareList = this.domElements.get('containerCompareList');
+  sortList(sortBy = null) {
+    const sort = sortBy || this.getCurrentSort();
+    this.currentSortBy = sort;
+
+    const containerCompareList = this.domElements?.get ? this.domElements.get('containerCompareList') : null;
     if (!containerCompareList) return;
 
-    const rows = Array.from(containerCompareList.children);
+    const rows = Array.from(containerCompareList.children || []);
 
     rows.sort((a, b) => {
-      const codeA = a.getAttribute('data-airport-code');
-      const codeB = b.getAttribute('data-airport-code');
-      const priceA = parseInt(a.getAttribute('data-price') || '999999', 10);
-      const priceB = parseInt(b.getAttribute('data-price') || '999999', 10);
+      const codeA = a.getAttribute('data-airport-code') || '';
+      const codeB = b.getAttribute('data-airport-code') || '';
 
-      if (sortBy === 'price-asc') {
-        return priceA - priceB || codeA.localeCompare(codeB);
-      } else if (sortBy === 'price-desc') {
-        return priceB - priceA || codeA.localeCompare(codeB);
-      } else if (sortBy === 'code') {
+      const itemA = this.itemsData.get(codeA);
+      const itemB = this.itemsData.get(codeB);
+
+      const priceAttrA = parseInt(a.getAttribute('data-price') || '999999', 10);
+      const priceAttrB = parseInt(b.getAttribute('data-price') || '999999', 10);
+
+      const priceA = (itemA && itemA.status === 'success' && itemA.price !== null)
+        ? itemA.price
+        : (priceAttrA < 999999 ? priceAttrA : null);
+      const priceB = (itemB && itemB.status === 'success' && itemB.price !== null)
+        ? itemB.price
+        : (priceAttrB < 999999 ? priceAttrB : null);
+
+      const hasPriceA = priceA !== null && !isNaN(priceA);
+      const hasPriceB = priceB !== null && !isNaN(priceB);
+
+      if (sort === 'price-asc') {
+        if (hasPriceA && !hasPriceB) return -1;
+        if (!hasPriceA && hasPriceB) return 1;
+        if (hasPriceA && hasPriceB && priceA !== priceB) {
+          return priceA - priceB;
+        }
+        return codeA.localeCompare(codeB);
+      } else if (sort === 'price-desc') {
+        if (hasPriceA && !hasPriceB) return -1;
+        if (!hasPriceA && hasPriceB) return 1;
+        if (hasPriceA && hasPriceB && priceA !== priceB) {
+          return priceB - priceA;
+        }
+        return codeA.localeCompare(codeB);
+      } else if (sort === 'code') {
         return codeA.localeCompare(codeB);
       }
       return 0;
