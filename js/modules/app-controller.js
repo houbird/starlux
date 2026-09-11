@@ -433,7 +433,7 @@ export class AppController {
     let corsModalShown = false;
 
     // Concurrently fetch prices for each destination
-    selectedDestinations.forEach(async (dest) => {
+    const searchPromises = selectedDestinations.map(async (dest) => {
       try {
         // Use compact flight numbers display, NOT full card HTML
         const flightNumbersPromise = this.flightNumberService
@@ -468,11 +468,9 @@ export class AppController {
       }
     });
 
-    // Initial sort
-    const sortVal = this.domElements.get('selectCompareSort')?.value || 'price-asc';
-    setTimeout(() => {
-      this.singleDayCompareRenderer.sortList(sortVal);
-    }, 100);
+    await Promise.allSettled(searchPromises);
+    const finalSort = this.domElements.get('selectCompareSort')?.value || 'price-asc';
+    this.singleDayCompareRenderer.sortList(finalSort);
   }
 
   handleUrlParameters() {
