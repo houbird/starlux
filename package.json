@@ -3,6 +3,6 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "test": "node js/single-day-compare.test.js"
+    "test": "node js/single-day-compare.test.js && node js/flight-renderer.test.js"
   }
 }

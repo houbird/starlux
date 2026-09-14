@@ -130,7 +130,9 @@ export class SingleDayCompareRenderer {
     const calendars = data?.data?.calendars || [];
     const targetCalendar = calendars.find(c => c.departureDate === itemInfo.departureDate) || calendars[0];
 
-    if (!targetCalendar || targetCalendar.status !== 'available' || !targetCalendar.price?.amount) {
+    const priceAmount = targetCalendar?.totalPrices?.total?.amount ?? targetCalendar?.totalPrices?.amount ?? targetCalendar?.price?.amount;
+
+    if (!targetCalendar || targetCalendar.status !== 'available' || !priceAmount) {
       itemInfo.status = 'unavailable';
       itemInfo.price = null;
       row.setAttribute('data-price', '999999');
@@ -142,8 +144,8 @@ export class SingleDayCompareRenderer {
       return;
     }
 
-    const price = targetCalendar.price.amount;
-    const currency = targetCalendar.price.currencyCode || 'TWD';
+    const price = priceAmount;
+    const currency = targetCalendar?.totalPrices?.total?.currencyCode ?? targetCalendar?.totalPrices?.currencyCode ?? targetCalendar.price?.currencyCode ?? 'TWD';
     itemInfo.status = 'success';
     itemInfo.price = price;
     itemInfo.flightNumbers = flightNumbers;
