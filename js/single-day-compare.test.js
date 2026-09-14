@@ -306,7 +306,23 @@ function runTests() {
   assert(multiContainer.children[2].id === 'compare-item-HKD', 'Code 3rd: HKD');
   assert(multiContainer.children[3].id === 'compare-item-NRT', 'Code 4th: NRT');
   assert(multiContainer.children[4].id === 'compare-item-SHI', 'Code 5th: SHI');
-  console.log('✓ Airport code sorting test PASSED');
+  // Test 13: Prioritizing totalPrices over price
+  const totalPricesApiData = {
+    data: {
+      calendars: [
+        {
+          departureDate: '2024-10-10',
+          price: { amount: 8203, currencyCode: 'TWD' },
+          totalPrices: { total: { amount: 13599, currencyCode: 'TWD' } },
+          status: 'available'
+        }
+      ]
+    }
+  };
+  renderer.updateItemResult('NRT', totalPricesApiData, 'JX800');
+  const nrtTotalInfo = renderer.itemsData.get('NRT');
+  assert(nrtTotalInfo.price === 13599, 'Price for NRT should prioritize totalPrices 13599 over 8203');
+  console.log('✓ totalPrices prioritization test PASSED');
 
   console.log('=== All Single Day Compare Tests PASSED ===');
 }

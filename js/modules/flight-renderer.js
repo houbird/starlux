@@ -11,6 +11,14 @@ export class FlightRenderer {
     this.bookingUrl = EXTERNAL_URLS.STARLUX_BOOKING;
   }
 
+  getPriceAmount(calendar) {
+    return calendar?.totalPrices?.total?.amount ?? calendar?.totalPrices?.amount ?? calendar?.price?.amount;
+  }
+
+  getCurrencyCode(calendar) {
+    return calendar?.totalPrices?.total?.currencyCode ?? calendar?.totalPrices?.currencyCode ?? calendar?.price?.currencyCode ?? 'TWD';
+  }
+
   renderFlightInfo(data, holidays = {}, flightDetailsHtml = '') {
     const calendars = data.data.calendars;
     const departure = this.domElements.get('selectAirportFrom').getAttribute('data-selected-value');
@@ -28,12 +36,13 @@ export class FlightRenderer {
       const index = offset + dayOfMonth - 1;
 
       daysArray[index] = calendar;
-      if(calendar?.price?.amount) prices.push(calendar.price.amount);
+      const priceAmount = this.getPriceAmount(calendar);
+      if (priceAmount) prices.push(priceAmount);
     });
 
-    const minPrice = Math.min(...prices);
-    const maxPrice = Math.max(...prices);
-    const avgPrice = (prices.reduce((a, b) => a + b, 0) / prices.length).toFixed(0);
+    const minPrice = prices.length ? Math.min(...prices) : 0;
+    const maxPrice = prices.length ? Math.max(...prices) : 0;
+    const avgPrice = prices.length ? (prices.reduce((a, b) => a + b, 0) / prices.length).toFixed(0) : 0;
 
     this.renderCalendar(daysArray, holidays, minPrice, maxPrice, departure, arrival);
     this.renderStatistics(minPrice, maxPrice, avgPrice, flightDetailsHtml);
@@ -70,20 +79,33 @@ export class FlightRenderer {
     const date = new Date(calendar.departureDate);
     const dayOfMonth = date.getDate();
     const dayOfWeek = date.getDay();
-    const lowPrice = calendar?.price?.amount <= minPrice;
-    const available = calendar.status === 'available';
-    const priceColor = lowPrice ? 'text-green-500 font-bold ' : calendar?.price?.amount >= maxPrice ? 'text-red-400' : 'text-gray-300';
+    const priceAmount = this.getPriceAmount(calendar);
+    const currencyCode = this.getCurrencyCode(calendar);
+    const lowPrice = priceAmount !== undefined && priceAmount !== null && priceAmount <= minPrice;
+    const available = calendar.status === 'available' && priceAmount !== undefined && priceAmount !== null;
+    const priceColor = lowPrice ? 'text-green-500 font-bold ' : (priceAmount >= maxPrice ? 'text-red-400' : 'text-gray-300');
     const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const day = String(dayOfMonth).padStart(2, '0');
     const holiday = holidays[calendar.departureDate];
     const holidayBadge = holiday ? `<div class="absolute top-0 left-0 bg-red-600 text-white text-[10px] px-1 rounded-br" title="${holiday.name || holiday.holidaycategory}">${(holiday.name || holiday.holidaycategory).slice(0,4)}</div>` : '';
 
-    const returnDateObj = new Date(date);
-    returnDateObj.setDate(returnDateObj.getDate() + 5);
-    const returnDay = String(returnDateObj.getDate()).padStart(2, '0');
-    const returnMonth = String(returnDateObj.getMonth() + 1).padStart(2, '0');
-    const returnYear = returnDateObj.getFullYear();
+    let returnDay, returnMonth, returnYear;
+    if (calendar.returnDate) {
+      const parts = calendar.returnDate.split('-');
+      if (parts.length === 3) {
+        returnYear = parts[0];
+        returnMonth = parts[1];
+        returnDay = parts[2];
+      }
+    }
+    if (!returnDay) {
+      const returnDateObj = new Date(date);
+      returnDateObj.setDate(returnDateObj.getDate() + 5);
+      returnDay = String(returnDateObj.getDate()).padStart(2, '0');
+      returnMonth = String(returnDateObj.getMonth() + 1).padStart(2, '0');
+      returnYear = returnDateObj.getFullYear();
+    }
 
     if (lowPrice) {
       div.classList.remove('border-gray-600');
@@ -106,9 +128,9 @@ export class FlightRenderer {
       <div class="flex items-end">
         ${available ? 
           `<div class="text-lg leading-6 ${priceColor}">
-            ${calendar?.price?.amount}
+            ${priceAmount}
           </div>
-          <div class="text-sm text-gray-500">${calendar?.price?.currencyCode}</div>`
+          <div class="text-sm text-gray-500">${currencyCode}</div>`
           :
           `<div class="text-base leading-6 italic text-gray-500">Unavailable</div>`
         }
