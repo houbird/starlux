@@ -2,8 +2,8 @@
  * Application Controller Module
  * Main application orchestrator that coordinates all modules
  */
-import { DEFAULT_AIRPORTS, DEFAULT_SEARCH, EXTERNAL_URLS } from '../settings.module.js?v=1.2.2';
-import { SingleDayCompareRenderer } from './single-day-compare-renderer.js?v=1.2.2';
+import { DEFAULT_AIRPORTS, DEFAULT_SEARCH, EXTERNAL_URLS } from '../settings.module.js?v=1.2.3';
+import { SingleDayCompareRenderer } from './single-day-compare-renderer.js?v=1.2.3';
 
 export class AppController {
   constructor(
@@ -428,7 +428,7 @@ export class AppController {
     }
 
     // Render initial list with loading spinners and custom return date
-    this.singleDayCompareRenderer.renderInitialList(departure, selectedDestinations, departureDate, returnDateStr);
+    this.singleDayCompareRenderer.renderInitialList(departure, selectedDestinations, departureDate, returnDateStr, cabin);
 
     let corsModalShown = false;
 
@@ -440,8 +440,12 @@ export class AppController {
           ? this.flightNumberService.getFlightNumbersDisplay(departure, dest.code)
           : Promise.resolve('');
 
+        const searchFn = typeof this.flightSearch.searchSingleDayFlight === 'function'
+          ? this.flightSearch.searchSingleDayFlight.bind(this.flightSearch)
+          : this.flightSearch.searchFlight.bind(this.flightSearch);
+
         const [flightData, flightNumbers] = await Promise.all([
-          this.flightSearch.searchFlight(departure, dest.code, departureDate, cabin, corporateCode, returnDateStr),
+          searchFn(departure, dest.code, departureDate, cabin, corporateCode, returnDateStr),
           flightNumbersPromise
         ]);
 

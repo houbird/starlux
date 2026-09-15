@@ -13,6 +13,7 @@ export const API_ENDPOINTS = {
   AIRPORT_ROUTES: 'https://opensheet.elk.sh/1ezR0gCNjmVRRUBKtnP1LfMhGDPPyzLMbH8UsJEMBnrw/routes',
   TAIWAN_CALENDAR: 'https://opensheet.elk.sh/1yC_pjiP0orcMqRy0rpymMjDpISJhiJBcMoOmCowru84/taiwan-calendar',
   FLIGHT_SEARCH: 'https://cors-anywhere.herokuapp.com/https://ecapi.starlux-airlines.com/searchFlight/v2/flights/calendars/monthly',
+  FLIGHT_SEARCH_DAILY: 'https://cors-anywhere.herokuapp.com/https://ecapi.starlux-airlines.com/searchFlight/v2/flights/search',
   FLIGHT_NUMBERS: 'https://opensheet.elk.sh/1ezR0gCNjmVRRUBKtnP1LfMhGDPPyzLMbH8UsJEMBnrw/flightno',
   CORS_PROXY: 'https://cors-anywhere.herokuapp.com',
   STARLUX_BASE: 'https://ecapi.starlux-airlines.com'

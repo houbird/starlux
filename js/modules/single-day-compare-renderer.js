@@ -28,13 +28,14 @@ export class SingleDayCompareRenderer {
    * @param {Array<Object>} destinations - Array of airport objects { code, name, country, location, region }
    * @param {string} departureDate - Departure date string (YYYY-MM-DD)
    * @param {string|null} customReturnDateStr - Optional custom return date string (YYYY-MM-DD)
+   * @param {string} cabin - Cabin class (e.g. 'eco', 'business')
    */
-  renderInitialList(departure, destinations, departureDate, customReturnDateStr = null) {
+  renderInitialList(departure, destinations, departureDate, customReturnDateStr = null, cabin = 'eco') {
     const containerCompareList = this.domElements.get('containerCompareList');
     if (!containerCompareList) return;
 
-    this.itemsData.clear();
     containerCompareList.innerHTML = '';
+    this.itemsData.clear();
     this.currentSortBy = this.getCurrentSort();
 
     let returnDateStr = customReturnDateStr;
@@ -54,6 +55,7 @@ export class SingleDayCompareRenderer {
         departure,
         departureDate,
         returnDateStr,
+        cabin: cabin || 'eco',
         status: 'loading',
         price: null,
         flightNumbers: ''
@@ -92,6 +94,101 @@ export class SingleDayCompareRenderer {
   }
 
   /**
+   * Extract price, currency, and flight numbers from flights/search API or legacy calendars API
+   */
+  extractFlightData(data, itemInfo) {
+    // 1. Check for flights/search response structure (data.data.flights)
+    const flights = data?.data?.flights;
+    if (Array.isArray(flights)) {
+      if (flights.length === 0) {
+        return null;
+      }
+
+      let bestAmount = Infinity;
+      let currency = 'TWD';
+      const flightNoSet = new Set();
+      const preferredCabin = itemInfo?.cabin || 'eco';
+
+      for (const flight of flights) {
+        if (Array.isArray(flight.flightNo)) {
+          flight.flightNo.forEach(fn => { if (fn) flightNoSet.add(fn); });
+        }
+
+        let priceFoundForFlight = false;
+
+        // Check priceInfo first
+        if (Array.isArray(flight.priceInfo)) {
+          // Look for preferred cabin first
+          const cabinEntry = flight.priceInfo.find(p => p.cabin === preferredCabin);
+          if (cabinEntry) {
+            const amount = cabinEntry.totalPrices?.total?.amount ?? cabinEntry.totalPrices?.amount ?? cabinEntry.from?.amount;
+            if (amount && amount < bestAmount) {
+              bestAmount = amount;
+              currency = cabinEntry.totalPrices?.total?.currencyCode ?? cabinEntry.totalPrices?.currencyCode ?? cabinEntry.from?.currencyCode ?? currency;
+            }
+            if (amount) priceFoundForFlight = true;
+          }
+
+          // If preferred cabin wasn't found in priceInfo, check any cabin
+          if (!priceFoundForFlight) {
+            flight.priceInfo.forEach(p => {
+              const amount = p.totalPrices?.total?.amount ?? p.totalPrices?.amount ?? p.from?.amount;
+              if (amount && amount < bestAmount) {
+                bestAmount = amount;
+                currency = p.totalPrices?.total?.currencyCode ?? p.totalPrices?.currencyCode ?? p.from?.currencyCode ?? currency;
+                priceFoundForFlight = true;
+              }
+            });
+          }
+        }
+
+        // If not found in priceInfo, check airOffers
+        if (!priceFoundForFlight && Array.isArray(flight.airOffers)) {
+          const availableOffers = flight.airOffers.filter(o => !o.isSoldOut);
+          const cabinOffers = availableOffers.filter(o => o.cabin === preferredCabin);
+          const candidateOffers = cabinOffers.length > 0 ? cabinOffers : availableOffers;
+
+          candidateOffers.forEach(o => {
+            const amount = o.totalPrices?.total?.amount ?? o.totalPrices?.amount ?? o.price?.total?.amount;
+            if (amount && amount < bestAmount) {
+              bestAmount = amount;
+              currency = o.totalPrices?.total?.currencyCode ?? o.totalPrices?.currencyCode ?? o.price?.total?.currencyCode ?? currency;
+            }
+          });
+        }
+      }
+
+      if (bestAmount !== Infinity) {
+        return {
+          price: bestAmount,
+          currency,
+          flightNumbers: Array.from(flightNoSet).join(', ')
+        };
+      }
+
+      return null;
+    }
+
+    // 2. Fallback to calendars structure (calendars/monthly or mock tests)
+    const calendars = data?.data?.calendars;
+    if (Array.isArray(calendars)) {
+      const targetCalendar = calendars.find(c => c.departureDate === itemInfo?.departureDate) || calendars[0];
+      const priceAmount = targetCalendar?.totalPrices?.total?.amount ?? targetCalendar?.totalPrices?.amount ?? targetCalendar?.price?.amount;
+
+      if (targetCalendar && targetCalendar.status === 'available' && priceAmount) {
+        const currency = targetCalendar?.totalPrices?.total?.currencyCode ?? targetCalendar?.totalPrices?.currencyCode ?? targetCalendar.price?.currencyCode ?? 'TWD';
+        return {
+          price: priceAmount,
+          currency,
+          flightNumbers: ''
+        };
+      }
+    }
+
+    return null;
+  }
+
+  /**
    * Update a specific destination item row when API returns data
    * @param {string} airportCode - Destination airport code
    * @param {Object} data - Flight data API response or error
@@ -127,12 +224,9 @@ export class SingleDayCompareRenderer {
       return;
     }
 
-    const calendars = data?.data?.calendars || [];
-    const targetCalendar = calendars.find(c => c.departureDate === itemInfo.departureDate) || calendars[0];
+    const flightData = this.extractFlightData(data, itemInfo);
 
-    const priceAmount = targetCalendar?.totalPrices?.total?.amount ?? targetCalendar?.totalPrices?.amount ?? targetCalendar?.price?.amount;
-
-    if (!targetCalendar || targetCalendar.status !== 'available' || !priceAmount) {
+    if (!flightData || !flightData.price) {
       itemInfo.status = 'unavailable';
       itemInfo.price = null;
       row.setAttribute('data-price', '999999');
@@ -144,11 +238,16 @@ export class SingleDayCompareRenderer {
       return;
     }
 
-    const price = priceAmount;
-    const currency = targetCalendar?.totalPrices?.total?.currencyCode ?? targetCalendar?.totalPrices?.currencyCode ?? targetCalendar.price?.currencyCode ?? 'TWD';
+    const price = flightData.price;
+    const currency = flightData.currency || 'TWD';
+    let finalFlightNumbers = flightNumbers;
+    if ((!finalFlightNumbers || finalFlightNumbers === 'No direct flights') && flightData.flightNumbers) {
+      finalFlightNumbers = flightData.flightNumbers;
+    }
+
     itemInfo.status = 'success';
     itemInfo.price = price;
-    itemInfo.flightNumbers = flightNumbers;
+    itemInfo.flightNumbers = finalFlightNumbers;
 
     row.setAttribute('data-price', price);
 
@@ -158,8 +257,8 @@ export class SingleDayCompareRenderer {
     const bookingHref = `${this.bookingUrl}?ondCityCode[0].origin=${itemInfo.departure}&ondCityCode[0].destination=${airportCode}&ondCityCode[0].day=${dDay}&ondCityCode[0].month=${dMonth}/${dYear}&numAdults=1&numChildren=0&numInfant=0&cabinClassCode=Y&tripType=R&ondCityCode[1].month=${rMonth}/${rYear}&ondCityCode[1].day=${rDay}`;
 
     // Compact flight number badges
-    const flightBadges = flightNumbers && flightNumbers !== 'No direct flights'
-      ? flightNumbers.split(',').map(fn => `<span class="text-[10px] bg-gray-800 text-blue-300 border border-gray-700 px-1.5 py-0.5 rounded font-mono">${fn.trim()}</span>`).join(' ')
+    const flightBadges = finalFlightNumbers && finalFlightNumbers !== 'No direct flights'
+      ? finalFlightNumbers.split(',').map(fn => `<span class="text-[10px] bg-gray-800 text-blue-300 border border-gray-700 px-1.5 py-0.5 rounded font-mono">${fn.trim()}</span>`).join(' ')
       : '';
 
     statusContainer.innerHTML = `
