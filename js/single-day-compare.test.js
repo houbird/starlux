@@ -3,6 +3,7 @@
  */
 import { SingleDayCompareRenderer } from './modules/single-day-compare-renderer.js';
 import { DateUtils } from './modules/date-utils.js';
+import { FlightSearch } from './modules/flight-search.js';
 
 function assert(condition, message) {
   if (!condition) {
@@ -76,7 +77,7 @@ class MockElement {
   }
 }
 
-function runTests() {
+async function runTests() {
   console.log('=== Running Single Day Compare Unit Tests ===');
 
   const elementsMap = {};
@@ -322,7 +323,105 @@ function runTests() {
   renderer.updateItemResult('NRT', totalPricesApiData, 'JX800');
   const nrtTotalInfo = renderer.itemsData.get('NRT');
   assert(nrtTotalInfo.price === 13599, 'Price for NRT should prioritize totalPrices 13599 over 8203');
-  console.log('✓ totalPrices prioritization test PASSED');
+  // Test 14: flights/search API format with totalPrices amount 16662
+  const flightSearchApiData = {
+    success: true,
+    data: {
+      flightInfo: { departure: 'TPE', arrival: 'KMJ' },
+      flights: [
+        {
+          isDirect: true,
+          flightNo: ['JX846'],
+          priceInfo: [
+            {
+              cabin: 'eco',
+              from: { amount: 8203, currencyCode: 'TWD' },
+              totalPrices: { total: { amount: 16662, currencyCode: 'TWD' } }
+            },
+            {
+              cabin: 'business',
+              from: { amount: 18475, currencyCode: 'TWD' },
+              totalPrices: { total: { amount: 26934, currencyCode: 'TWD' } }
+            }
+          ]
+        }
+      ]
+    }
+  };
+
+  const searchTestRenderer = new SingleDayCompareRenderer(mockDomElements);
+  searchTestRenderer.renderInitialList('TPE', [{ code: 'KMJ', name: 'Kumamoto', country: 'Japan' }], '2026-10-08');
+  searchTestRenderer.updateItemResult('KMJ', flightSearchApiData);
+
+  const kmjFlightSearchInfo = searchTestRenderer.itemsData.get('KMJ');
+  assert(kmjFlightSearchInfo.price === 16662, 'Price for KMJ should be 16662 from totalPrices amount');
+  assert(kmjFlightSearchInfo.flightNumbers === 'JX846', 'Flight number should be extracted from flightNo');
+  assert(kmjFlightSearchInfo.status === 'success', 'Status should be success');
+
+  const kmjSearchRow = findById(mockDomElements.get('containerCompareList'), 'compare-item-KMJ');
+  assert(kmjSearchRow !== null, 'compare-item-KMJ row should exist');
+  assert(kmjSearchRow.innerHTML.includes('$16,662'), 'Row HTML should include formatted price $16,662');
+  assert(kmjSearchRow.innerHTML.includes('JX846'), 'Row HTML should include flight badge JX846');
+  // Test 15: flights/search API format with totalPrices amount 18822
+  const flightSearch18822Data = {
+    success: true,
+    data: {
+      flightInfo: { departure: 'TPE', arrival: 'KMJ' },
+      flights: [
+        {
+          isDirect: true,
+          flightNo: ['JX846'],
+          priceInfo: [
+            {
+              cabin: 'eco',
+              from: { amount: 10363, currencyCode: 'TWD' },
+              totalPrices: { total: { amount: 18822, currencyCode: 'TWD' } }
+            },
+            {
+              cabin: 'business',
+              from: { amount: 18475, currencyCode: 'TWD' },
+              totalPrices: { total: { amount: 26934, currencyCode: 'TWD' } }
+            }
+          ]
+        }
+      ]
+    }
+  };
+
+  searchTestRenderer.updateItemResult('KMJ', flightSearch18822Data);
+  assert(kmjFlightSearchInfo.price === 18822, 'Price for KMJ should be updated to 18822');
+  assert(kmjSearchRow.innerHTML.includes('$18,822'), 'Row HTML should include formatted price $18,822');
+  // Test 16: FlightSearch.searchSingleDayFlight sends correct URL, headers, and body
+  const flightSearch = new FlightSearch();
+  let capturedUrl = '';
+  let capturedOptions = {};
+  globalThis.fetch = async (url, options) => {
+    capturedUrl = url;
+    capturedOptions = options;
+    return {
+      ok: true,
+      json: async () => ({ success: true, data: { flights: [] } })
+    };
+  };
+
+  await flightSearch.searchSingleDayFlight('TPE', 'KMJ', '2026-10-08', 'eco', null, '2026-10-10');
+  assert(capturedUrl === 'https://cors-anywhere.herokuapp.com/https://ecapi.starlux-airlines.com/searchFlight/v2/flights/search', 'URL should be v2/flights/search');
+  assert(capturedOptions.headers['jx-deeplink-from'] === 'everymundo', 'Headers should include jx-deeplink-from');
+  assert(capturedOptions.headers['jx-lang'] === 'zh-TW', 'Headers should include jx-lang');
+  const parsedBody = JSON.parse(capturedOptions.body);
+  assert(parsedBody.cabin === 'eco', 'Body cabin should be eco');
+  assert(parsedBody.itineraries.length === 2, 'Body should have 2 itineraries');
+  assert(parsedBody.itineraries[0].departure === 'TPE' && parsedBody.itineraries[0].arrival === 'KMJ', 'Outbound leg correct');
+  assert(parsedBody.itineraries[0].departureDate === '2026-10-08', 'Outbound departureDate correct');
+  assert(parsedBody.itineraries[1].departure === 'KMJ' && parsedBody.itineraries[1].arrival === 'TPE', 'Inbound leg correct');
+  assert(parsedBody.itineraries[1].departureDate === '2026-10-10', 'Inbound departureDate correct');
+  assert(parsedBody.travelers.adt === 1, 'Travelers adt should be 1');
+
+  // Test 17: searchFlight with customReturnDate delegates to searchSingleDayFlight
+  capturedUrl = '';
+  await flightSearch.searchFlight('TPE', 'KMJ', '2026-10-08', 'eco', null, '2026-10-10');
+  assert(capturedUrl === 'https://cors-anywhere.herokuapp.com/https://ecapi.starlux-airlines.com/searchFlight/v2/flights/search', 'searchFlight with return date should call searchSingleDayFlight');
+  console.log('✓ FlightSearch.searchSingleDayFlight API request format & delegation test PASSED');
 
   console.log('=== All Single Day Compare Tests PASSED ===');
 }

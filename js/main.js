@@ -2,18 +2,18 @@
  * Main Application Entry Point
  * Orchestrates all modules and initializes the application
  */
-import { DomElements } from './modules/dom-elements.js?v=1.2.2';
-import { DateUtils } from './modules/date-utils.js?v=1.2.2';
-import { HolidayService } from './modules/holiday-service.js?v=1.2.2';
-import { AirportManager } from './modules/airport-manager.js?v=1.2.2';
-import { AirportDataService } from './modules/airport-data-service.js?v=1.2.2';
-import { FlightSearch } from './modules/flight-search.js?v=1.2.2';
-import { UIStateManager } from './modules/ui-state-manager.js?v=1.2.2';
-import { FlightRenderer } from './modules/flight-renderer.js?v=1.2.2';
-import { UrlParamsHandler } from './modules/url-params-handler.js?v=1.2.2';
-import { VersionDisplay } from './modules/version-display.js?v=1.2.2';
-import { FlightNumberService } from './modules/flight-number-service.js?v=1.2.2';
-import { AppController } from './modules/app-controller.js?v=1.2.2';
+import { DomElements } from './modules/dom-elements.js?v=1.2.3';
+import { DateUtils } from './modules/date-utils.js?v=1.2.3';
+import { HolidayService } from './modules/holiday-service.js?v=1.2.3';
+import { AirportManager } from './modules/airport-manager.js?v=1.2.3';
+import { AirportDataService } from './modules/airport-data-service.js?v=1.2.3';
+import { FlightSearch } from './modules/flight-search.js?v=1.2.3';
+import { UIStateManager } from './modules/ui-state-manager.js?v=1.2.3';
+import { FlightRenderer } from './modules/flight-renderer.js?v=1.2.3';
+import { UrlParamsHandler } from './modules/url-params-handler.js?v=1.2.3';
+import { VersionDisplay } from './modules/version-display.js?v=1.2.3';
+import { FlightNumberService } from './modules/flight-number-service.js?v=1.2.3';
+import { AppController } from './modules/app-controller.js?v=1.2.3';
 
 /**
  * Application class that initializes and coordinates all modules
