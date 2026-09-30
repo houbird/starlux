@@ -1,0 +1,36 @@
+/* Roboto Mono font definitions (Self-hosted) */
+/* roboto-mono-regular - 400 */
+@font-face {
+  font-family: 'Roboto Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('../fonts/roboto-mono-v31-latin-regular.woff2') format('woff2');
+}
+
+/* roboto-mono-500 - medium */
+@font-face {
+  font-family: 'Roboto Mono';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url('../fonts/roboto-mono-v31-latin-500.woff2') format('woff2');
+}
+
+/* roboto-mono-600 - semibold */
+@font-face {
+  font-family: 'Roboto Mono';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url('../fonts/roboto-mono-v31-latin-600.woff2') format('woff2');
+}
+
+/* roboto-mono-700 - bold */
+@font-face {
+  font-family: 'Roboto Mono';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('../fonts/roboto-mono-v31-latin-700.woff2') format('woff2');
+}

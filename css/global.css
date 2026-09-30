@@ -1,5 +1,7 @@
+@import "fonts.css";
+
 * {
-  font-family: 'Courier New', Courier, monospace;
+  font-family: 'Roboto Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace, "Noto Sans TC", "Microsoft JhengHei", sans-serif;
   font-size: 14px;
 }
 body {
