@@ -1,6 +1,10 @@
-* {
-  font-family: 'Courier New', Courier, monospace;
+html, body {
+  font-family: 'Roboto Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace, "Noto Sans TC", "Microsoft JhengHei", sans-serif;
   font-size: 14px;
+}
+
+button, input, select, textarea {
+  font-family: inherit;
 }
 body {
   color: #fff;
