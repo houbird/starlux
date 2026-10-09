@@ -35,10 +35,10 @@ export class AppController {
   }
 
   initialize() {
+    this.setupInitialState();
     this.setupAirportDropdowns();
     this.setupButtonGroups();
     this.setupEventListeners();
-    this.setupInitialState();
     this.setupCompareModeUI();
     this.handleUrlParameters();
     this.versionDisplay.displayVersion();
@@ -190,8 +190,12 @@ export class AppController {
 
   setupInitialState() {
     const inputMonth = this.domElements.get('inputMonth');
+    const spanMonth = this.domElements.get('spanMonth');
     if (inputMonth) {
       inputMonth.value = this.dateUtils.getCurrentMonth();
+      if (spanMonth) {
+        spanMonth.textContent = inputMonth.value;
+      }
     }
 
     const inputSingleDate = this.domElements.get('inputSingleDate');
@@ -686,5 +690,42 @@ export class AppController {
       console.error('Failed to update flight count:', error);
       this.domElements.updateFlightCountBadge(0);
     }
+  }
+
+  refreshAirportViews() {
+    const selectAirportFrom = this.domElements.get('selectAirportFrom');
+    const selectAirportTo = this.domElements.get('selectAirportTo');
+    const currentFrom = selectAirportFrom?.getAttribute('data-selected-value') || DEFAULT_AIRPORTS.FROM;
+    const currentTo = selectAirportTo?.getAttribute('data-selected-value') || DEFAULT_AIRPORTS.TO;
+
+    if (selectAirportFrom) {
+      selectAirportFrom.innerHTML = '';
+      this.airportManager.appendAirportDropdown(selectAirportFrom, {
+        preselected: [currentFrom],
+        dropdownId: 'airportFromDropdownList',
+        onChange: (value) => {
+          this.airportManager.updateAirportSelectorStyle(selectAirportFrom, value);
+          this.updateFlightCount();
+          this.renderCompareAirportChips();
+        }
+      });
+    }
+
+    if (selectAirportTo) {
+      selectAirportTo.innerHTML = '';
+      this.airportManager.appendAirportDropdown(selectAirportTo, {
+        preselected: [currentTo],
+        dropdownId: 'airportToDropdownList',
+        onChange: (value) => {
+          this.airportManager.updateAirportSelectorStyle(selectAirportTo, value);
+          this.updateFlightCount();
+        }
+      });
+    }
+
+    this.setupDropdownInteractions();
+    this.renderCompareCountryGroups();
+    this.renderCompareAirportChips();
+    this.updateFlightCount();
   }
 }

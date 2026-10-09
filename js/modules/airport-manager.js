@@ -24,6 +24,14 @@ export class AirportManager {
     });
   }
 
+  updateAirports(airports, regionStyles) {
+    this.airports = airports;
+    if (regionStyles) {
+      this.regionStyles = regionStyles;
+    }
+    this.options = this.createOptions();
+  }
+
   updateAirportSelectorStyle(selectorElement, airportCode) {
     const button = selectorElement.querySelector('button');
     if (!button) {

@@ -31,11 +31,11 @@ class StarluxApp {
       this.modules.holidayService = new HolidayService();
       this.modules.flightNumberService = new FlightNumberService();
       
-      // Fetch airport data from API
+      // Get airport data (instant SWR: cached or bundled fallback, 0ms)
       this.modules.airportDataService = new AirportDataService();
-      const { airports, regionStyles } = await this.modules.airportDataService.getAirportConfiguration();
+      const { airports, regionStyles } = this.modules.airportDataService.getAirportConfigurationSync();
       
-      // Initialize airport manager with fetched data
+      // Initialize airport manager with available data
       this.modules.airportManager = new AirportManager(airports, regionStyles);
       this.modules.flightSearch = new FlightSearch();
       this.modules.uiStateManager = new UIStateManager();
@@ -62,8 +62,17 @@ class StarluxApp {
         this.modules.flightNumberService
       );
 
-      // Start the application
+      // Start the application immediately (0ms)
       this.controller.initialize();
+      
+      // Background revalidation (SWR) without blocking UI
+      this.modules.airportDataService.refreshDataInBackground((freshConfig) => {
+        if (freshConfig?.airports) {
+          this.modules.airportManager.updateAirports(freshConfig.airports, freshConfig.regionStyles);
+          this.controller.refreshAirportViews();
+        }
+      });
+      this.modules.flightNumberService.preloadInBackground();
       
       console.log('Starlux Flight Search App initialized successfully');
     } catch (error) {

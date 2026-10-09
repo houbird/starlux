@@ -1,6 +1,6 @@
 /**
  * Flight Number Service Module
- * Handles fetching and querying flight number data
+ * Handles fetching, caching, and querying flight number data
  * Follows Single Responsibility Principle (SRP)
  */
 import { API_ENDPOINTS } from '../settings.module.js';
@@ -8,11 +8,33 @@ import { API_ENDPOINTS } from '../settings.module.js';
 export class FlightNumberService {
   constructor() {
     this.apiUrl = API_ENDPOINTS.FLIGHT_NUMBERS;
+    this.storageKey = 'starlux_cached_flight_numbers_v1';
     this.cachedFlights = null;
+    this._loadInitialCache();
   }
 
   /**
-   * Fetch all flight numbers from API
+   * Initialize memory cache from localStorage if available
+   * @private
+   */
+  _loadInitialCache() {
+    try {
+      if (typeof localStorage !== 'undefined') {
+        const item = localStorage.getItem(this.storageKey);
+        if (item) {
+          const parsed = JSON.parse(item);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            this.cachedFlights = parsed;
+          }
+        }
+      }
+    } catch (e) {
+      // Ignore cache parse error
+    }
+  }
+
+  /**
+   * Fetch all flight numbers from API with cache fallback
    * @returns {Promise<Array>} Flight number data
    */
   async fetchFlightNumbers() {
@@ -28,10 +50,37 @@ export class FlightNumberService {
       
       const data = await response.json();
       this.cachedFlights = data;
+      try {
+        if (typeof localStorage !== 'undefined' && Array.isArray(data)) {
+          localStorage.setItem(this.storageKey, JSON.stringify(data));
+        }
+      } catch (e) {}
       return data;
     } catch (error) {
       console.error('Error fetching flight numbers:', error);
       return [];
+    }
+  }
+
+  /**
+   * Preload flight numbers in background without blocking UI
+   */
+  async preloadInBackground() {
+    try {
+      const response = await fetch(this.apiUrl);
+      if (!response.ok) return;
+
+      const data = await response.json();
+      if (Array.isArray(data)) {
+        this.cachedFlights = data;
+        try {
+          if (typeof localStorage !== 'undefined') {
+            localStorage.setItem(this.storageKey, JSON.stringify(data));
+          }
+        } catch (e) {}
+      }
+    } catch (e) {
+      console.warn('Background flight numbers preload skipped:', e.message);
     }
   }
 
@@ -136,5 +185,10 @@ export class FlightNumberService {
    */
   clearCache() {
     this.cachedFlights = null;
+    try {
+      if (typeof localStorage !== 'undefined') {
+        localStorage.removeItem(this.storageKey);
+      }
+    } catch (e) {}
   }
 }

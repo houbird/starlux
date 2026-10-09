@@ -33,8 +33,9 @@ export class DateUtils {
 
   static getCurrentMonth() {
     const now = new Date();
-    const year = now.getFullYear();
-    const month = String(now.getMonth() + 2).padStart(2, '0');
+    const targetDate = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+    const year = targetDate.getFullYear();
+    const month = String(targetDate.getMonth() + 1).padStart(2, '0');
     return `${year}-${month}`;
   }
 
